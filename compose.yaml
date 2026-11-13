@@ -1,0 +1,29 @@
+# Development database only.
+#
+# Spring Boot starts this automatically on `./gradlew bootRun` (spring-boot-docker-compose)
+# and reads the connection details from the service definition below, so the backend
+# needs no datasource URL or password in its own configuration.
+name: flightfootprints
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: flightfootprints
+      POSTGRES_USER: flightfootprints
+      POSTGRES_PASSWORD: flightfootprints # local development only
+    ports:
+      # Host port 5433 because 5432 is often taken by another local Postgres.
+      # Bound to loopback so the dev database is not reachable from the network.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      # PostgreSQL 18+ images keep their data in /var/lib/postgresql/<major>/docker
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flightfootprints -d flightfootprints"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  postgres-data:

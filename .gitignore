@@ -1,0 +1,22 @@
+# Secrets: never commit real values, see .env.example
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Logs
+*.log
+
+# backend/ and frontend/ keep their own .gitignore for build output and dependencies
