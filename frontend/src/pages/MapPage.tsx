@@ -1,0 +1,8 @@
+import { useTranslation } from "react-i18next"
+
+import { PagePlaceholder } from "@/components/PagePlaceholder"
+
+export function MapPage() {
+  const { t } = useTranslation()
+  return <PagePlaceholder title={t("map.title")} />
+}
