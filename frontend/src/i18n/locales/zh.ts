@@ -19,6 +19,22 @@ const zh: typeof en = {
   },
   map: {
     title: "航线地图",
+    empty: "还没有可以显示的航班。",
+    basemapUnavailable: "底图加载失败，航线仍然照常显示。",
+    flightsHeading: "航班",
+    selectHint: "在地图上或列表里选一趟航班，查看它的详情。",
+    closeDetails: "关闭详情",
+    controls: {
+      mapTitle: "航线地图",
+      zoomIn: "放大",
+      zoomOut: "缩小",
+      globeOn: "显示为地球",
+      globeOff: "显示为平面地图",
+      toggleAttribution: "显示或隐藏地图数据来源",
+      gestureWindows: "按住 Ctrl 并滚动来缩放地图",
+      gestureMac: "按住 ⌘ 并滚动来缩放地图",
+      gestureMobile: "用两根手指移动地图",
+    },
   },
   stats: {
     title: "飞行统计",

@@ -16,6 +16,22 @@ const en = {
   },
   map: {
     title: "Route map",
+    empty: "No flights to show yet.",
+    basemapUnavailable: "The background map could not be loaded. The routes are shown without it.",
+    flightsHeading: "Flights",
+    selectHint: "Choose a flight on the map or in the list to see its details.",
+    closeDetails: "Close details",
+    controls: {
+      mapTitle: "Map of flight routes",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      globeOn: "Show as a globe",
+      globeOff: "Show as a flat map",
+      toggleAttribution: "Show or hide the map credits",
+      gestureWindows: "Hold Ctrl and scroll to zoom the map",
+      gestureMac: "Hold ⌘ and scroll to zoom the map",
+      gestureMobile: "Use two fingers to move the map",
+    },
   },
   stats: {
     title: "Statistics",
