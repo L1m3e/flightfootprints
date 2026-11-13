@@ -2,6 +2,12 @@ spring:
   application:
     name: flightfootprints
 
+  config:
+    # Development convenience: read ../.env (the git-ignored file in the repository root)
+    # as extra properties. It is optional, and in production the same names arrive as
+    # real environment variables, which always win over this file.
+    import: optional:file:../.env[.properties]
+
   docker:
     compose:
       # compose.yaml lives in the repository root, one level above backend/.
@@ -13,3 +19,23 @@ spring:
       # Built-in Spring MVC errors (404, 405, validation, ...) are returned as
       # RFC 9457 application/problem+json instead of the default error page.
       enabled: true
+
+server:
+  servlet:
+    session:
+      # How long a signed-in session survives without any request.
+      timeout: 8h
+      # Keep the session id in the cookie only, never in a URL.
+      tracking-modes: cookie
+      cookie:
+        # The browser does not send the session cookie on requests started by other sites,
+        # except when the visitor follows a link to this site.
+        same-site: lax
+
+app:
+  auth:
+    # The site's only administrator. Leave both empty to run without one (read-only site).
+    admin-username: ${ADMIN_USERNAME:}
+    admin-password: ${ADMIN_PASSWORD:}
+    # Set REGISTRATION_ENABLED=false to stop visitors from creating accounts.
+    registration-enabled: ${REGISTRATION_ENABLED:true}

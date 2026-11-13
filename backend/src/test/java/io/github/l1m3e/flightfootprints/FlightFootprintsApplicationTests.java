@@ -8,24 +8,14 @@ import io.github.l1m3e.flightfootprints.airport.AirportImporter;
 import io.github.l1m3e.flightfootprints.airport.AirportRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 /**
  * Starts the whole application against a real PostgreSQL container, so these tests
  * cover what unit tests cannot: Flyway migrations, the startup import and the HTTP layer.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-class FlightFootprintsApplicationTests {
-
-    @Autowired
-    private MockMvcTester mvc;
+class FlightFootprintsApplicationTests extends IntegrationTest {
 
     @Autowired
     private AirportRepository airports;
