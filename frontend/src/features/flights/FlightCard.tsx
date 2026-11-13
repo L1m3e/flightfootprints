@@ -68,8 +68,9 @@ function RouteEnd({ airport, alignEnd = false }: { airport: Airport; alignEnd?: 
   return (
     <div className={cn("min-w-0", alignEnd && "text-right")}>
       <p className="font-mono text-2xl font-semibold tracking-tight sm:text-3xl">{airport.iata}</p>
-      {/* The full airport name is long, so it is a tooltip; the card shows city and country. */}
-      <p className="truncate text-sm text-muted-foreground" title={airport.name}>
+      {/* The full airport name is long, so it is a tooltip; the card shows city and country.
+          On a narrow screen the text wraps instead of being cut off. */}
+      <p className="text-sm text-balance text-muted-foreground" title={airport.name}>
         {place}
       </p>
     </div>

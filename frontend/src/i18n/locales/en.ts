@@ -105,6 +105,8 @@ const en = {
     airportSearching: "Searching…",
     airportNoMatch: "No matching airport.",
     airportTypeToSearch: "Type to search airports.",
+    airportClear: "Clear airport",
+    airportShowList: "Show airports",
     aircraft: "Aircraft",
     aircraftPlaceholder: "For example Boeing 777-300ER",
     seat: "Seat",

@@ -49,16 +49,22 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   )
 }
 
+// Changed from the generated version: `triggerLabel` and `clearLabel` give the two icon
+// buttons an accessible name. Without one a screen reader only announces "button".
 function ComboboxInput({
   className,
   children,
   disabled = false,
   showTrigger = true,
   showClear = false,
+  triggerLabel,
+  clearLabel,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
+  triggerLabel?: string
+  clearLabel?: string
 }) {
   return (
     <InputGroup className={cn("w-auto", className)}>
@@ -71,13 +77,13 @@ function ComboboxInput({
           <InputGroupButton
             size="icon-xs"
             variant="ghost"
-            render={<ComboboxTrigger />}
+            render={<ComboboxTrigger aria-label={triggerLabel} />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             disabled={disabled}
           />
         )}
-        {showClear && <ComboboxClear disabled={disabled} />}
+        {showClear && <ComboboxClear disabled={disabled} aria-label={clearLabel} />}
       </InputGroupAddon>
       {children}
     </InputGroup>

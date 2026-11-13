@@ -108,6 +108,8 @@ const zh: typeof en = {
     airportSearching: "搜索中…",
     airportNoMatch: "没有匹配的机场。",
     airportTypeToSearch: "输入内容来搜索机场。",
+    airportClear: "清除机场",
+    airportShowList: "展开机场列表",
     aircraft: "机型",
     aircraftPlaceholder: "例如 Boeing 777-300ER",
     seat: "座位号",

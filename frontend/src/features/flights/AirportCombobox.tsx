@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -39,20 +39,24 @@ export function AirportCombobox({
   const { t } = useTranslation()
   const format = useFormatters()
   const [typed, setTyped] = useState("")
-  const term = useDebouncedValue(typed.trim(), 200)
+
+  // The input also holds the label of the chosen airport. That text is not a search.
+  const search = value !== null && typed === airportLabel(value) ? "" : typed.trim()
+  const term = useDebouncedValue(search, 200)
   const { data: matches = [], isFetching } = useQuery(airportSearchQuery(term))
 
-  // The selected airport has to stay in the list, or the component could not show it
-  // as selected once the matches change.
-  const items = useMemo(() => {
-    const visible = term === "" ? [] : matches
-    if (value === null || visible.some((airport) => airport.iata === value.iata)) return visible
-    return [value, ...visible]
-  }, [matches, term, value])
+  // While something is typed, the list holds only what the server found, best match
+  // first. It is empty until the answer arrives: the component highlights the first row
+  // (the one Enter picks) when an empty list fills up, and showing the current choice in
+  // the meantime would use up that highlight on the wrong row.
+  // With nothing typed, the list shows the current choice.
+  let items: Airport[] = []
+  if (search !== "") items = matches
+  else if (value !== null) items = [value]
 
   let emptyText = t("flights.airportNoMatch")
-  if (typed.trim() === "") emptyText = t("flights.airportTypeToSearch")
-  else if (isFetching || typed.trim() !== term) emptyText = t("flights.airportSearching")
+  if (search === "") emptyText = t("flights.airportTypeToSearch")
+  else if (isFetching || search !== term) emptyText = t("flights.airportSearching")
 
   return (
     <Combobox
@@ -60,9 +64,13 @@ export function AirportCombobox({
       // The server already did the filtering and ordering.
       filter={null}
       value={value}
-      onValueChange={(airport: Airport | null) => onChange(airport)}
+      onValueChange={(airport: Airport | null) => {
+        onChange(airport)
+        // The search is over once something is picked (or the choice is cleared).
+        setTyped("")
+      }}
       onInputValueChange={(text, { reason }) => {
-        // Picking an item writes its label into the input. That is not a search.
+        // Picking an item writes its label into the input; only real typing is a search.
         if (reason !== "item-press") setTyped(text)
       }}
       itemToStringLabel={airportLabel}
@@ -74,7 +82,14 @@ export function AirportCombobox({
         placeholder={t("flights.airportPlaceholder")}
         aria-invalid={invalid}
         onBlur={onBlur}
+        onKeyDown={(event) => {
+          // Enter picks the highlighted airport. When no row is highlighted the browser
+          // would submit the whole form instead, which is never what Enter means here.
+          if (event.key === "Enter") event.preventDefault()
+        }}
         showClear={value !== null}
+        clearLabel={t("flights.airportClear")}
+        triggerLabel={t("flights.airportShowList")}
         className="w-full"
       />
       <ComboboxContent>
