@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: flightfootprints
+
+  docker:
+    compose:
+      # compose.yaml lives in the repository root, one level above backend/.
+      # Only read in development: the docker-compose module is not in the production jar.
+      file: ../compose.yaml
+
+  mvc:
+    problemdetails:
+      # Built-in Spring MVC errors (404, 405, validation, ...) are returned as
+      # RFC 9457 application/problem+json instead of the default error page.
+      enabled: true

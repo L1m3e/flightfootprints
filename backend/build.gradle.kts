@@ -1,0 +1,54 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
+plugins {
+    java
+    id("org.springframework.boot") version "4.1.2"
+    id("io.spring.dependency-management") version "1.1.7"
+}
+
+group = "io.github.l1m3e"
+version = "0.0.1-SNAPSHOT"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    // Not managed by Spring Boot's BOM, so the version is pinned here.
+    implementation("org.apache.commons:commons-csv:1.14.1")
+    runtimeOnly("org.postgresql:postgresql")
+
+    // Starts the Postgres container from ../compose.yaml on bootRun. `developmentOnly`
+    // keeps it out of the production jar and off the test classpath.
+    developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-data-jdbc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-flyway-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+    // Print each test's result, and the full stack trace of failures, to the console.
+    // Without this Gradle only says "BUILD SUCCESSFUL", which is hard to read in CI logs.
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = TestExceptionFormat.FULL
+    }
+}
