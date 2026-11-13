@@ -44,9 +44,13 @@ public abstract class IntegrationTest {
     @Autowired
     protected JdbcClient jdbc;
 
-    /** The database is shared, so each test starts from the same state: only the administrator. */
+    /**
+     * The database is shared, so each test starts from the same state: no flights and
+     * no account other than the administrator.
+     */
     @BeforeEach
     void resetData() {
+        jdbc.sql("DELETE FROM flights").update();
         jdbc.sql("DELETE FROM users WHERE role <> 'ADMIN'").update();
     }
 
