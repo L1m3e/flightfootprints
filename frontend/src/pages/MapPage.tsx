@@ -62,8 +62,9 @@ export function MapPage() {
             )}
           </div>
 
+          {/* On its own background: plain text over the map's place names is unreadable. */}
           {flights?.length === 0 && (
-            <p className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-sm text-muted-foreground">
+            <p className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 rounded-full bg-card/95 px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground shadow-sm ring-1 ring-foreground/10">
               {t("map.empty")}
             </p>
           )}
