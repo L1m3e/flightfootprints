@@ -12,6 +12,7 @@ The project is being built in stages. See the [roadmap](#roadmap) for what exist
 | Backend  | Java 25, Spring Boot 4 (Web MVC), Spring Security, Spring Data JDBC, Flyway, PostgreSQL 18                         |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui, React Router, TanStack Query, react-hook-form, zod, i18next |
 | Map      | MapLibre GL JS through react-map-gl, OpenFreeMap vector tiles, Turf for great-circle arcs                          |
+| Charts   | Recharts                                                                                                           |
 | Tests    | JUnit and Testcontainers (backend), Vitest (frontend)                                                              |
 | CI       | GitHub Actions                                                                                                     |
 
@@ -107,6 +108,29 @@ The basemap comes from [OpenFreeMap](https://openfreemap.org/), a free service w
 API key. If it cannot be reached, the routes and airports are still drawn, on a plain
 background.
 
+## The timeline
+
+The home page lists every flight, newest first, under a heading for each year that also
+gives the year's number of flights and distance. A card shows the route, the distance and
+whatever else was recorded about the flight, and links to it on the map. A line above the
+timeline sums up the whole log.
+
+## Statistics
+
+The statistics page shows:
+
+- the number of flights and the total distance, also in miles and as trips around the
+  equator
+- how many airports and how many countries and regions were visited
+- the flights per year, as a chart or as a table, including the years without a flight
+- the airlines, ranked by number of flights
+- the ten most visited airports, where take-offs and landings both count
+- the longest and the shortest flight, each with a link to the map
+
+PostgreSQL does the counting, one query per figure, so the application never loads every
+flight just to add them up. Airline names are free text and are grouped without regard to
+upper and lower case.
+
 ## API
 
 Every error is returned as an RFC 9457 problem document (`application/problem+json`).
@@ -118,6 +142,7 @@ Every error is returned as an RFC 9457 problem document (`application/problem+js
 | `GET`               | `/api/flights/{id}`  | everyone        | One flight                                   |
 | `POST`              | `/api/flights`       | administrator   | Add a flight                                 |
 | `PUT`, `DELETE`     | `/api/flights/{id}`  | administrator   | Change or delete a flight                    |
+| `GET`               | `/api/stats`         | everyone        | Totals, rankings and flights per year        |
 | `GET`               | `/api/airports?q=`   | everyone        | Search airports by code, city or name        |
 | `GET`               | `/api/auth/me`       | everyone        | Who is signed in                             |
 | `POST`              | `/api/auth/register` | visitors        | Create a regular account                     |
@@ -160,7 +185,7 @@ database keeps the airports it already has.
 - [x] Project skeleton: monorepo, Flyway migrations, airport import, health check
 - [x] Accounts, admin login, and creating, editing and deleting flights
 - [x] World map with great-circle routes
-- [ ] Statistics page and timeline
+- [x] Statistics page and timeline
 - [ ] Aircraft side views with airline liveries
 - [ ] Dockerfile, production Compose file and deployment guide
 
@@ -170,6 +195,7 @@ database keeps the airports it already has.
 - Basemap: [OpenFreeMap](https://openfreemap.org/), © [OpenMapTiles](https://www.openmaptiles.org/),
   data from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
 - Map rendering: [MapLibre GL JS](https://maplibre.org/), BSD 3-Clause License
+- Charts: [Recharts](https://recharts.org/), MIT License
 - UI components: [shadcn/ui](https://ui.shadcn.com/) and [Base UI](https://base-ui.com/), MIT License
 - Typeface: [Geist](https://vercel.com/font), SIL Open Font License 1.1
 - Icons: [Lucide](https://lucide.dev/), ISC License
