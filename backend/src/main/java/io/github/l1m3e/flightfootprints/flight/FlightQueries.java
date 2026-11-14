@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
  * hand-written row mapper.
  */
 @Repository
-class FlightQueries {
+public class FlightQueries {
 
     private static final String SELECT_FLIGHTS = """
             SELECT f.id, f.flight_date, f.flight_no, f.airline, f.aircraft, f.seat, f.cabin, f.distance_km, f.notes,
@@ -47,6 +47,20 @@ class FlightQueries {
     Optional<FlightResponse> findById(long id) {
         return jdbcClient.sql(SELECT_FLIGHTS + "WHERE f.id = :id")
                 .param("id", id)
+                .query(FlightQueries::toResponse)
+                .optional();
+    }
+
+    /** The flight that covered the most distance. Of several equally long ones, the most recent. */
+    public Optional<FlightResponse> findLongest() {
+        return jdbcClient.sql(SELECT_FLIGHTS + "ORDER BY f.distance_km DESC, f.flight_date DESC, f.id DESC LIMIT 1")
+                .query(FlightQueries::toResponse)
+                .optional();
+    }
+
+    /** The flight that covered the least distance. Of several equally short ones, the most recent. */
+    public Optional<FlightResponse> findShortest() {
+        return jdbcClient.sql(SELECT_FLIGHTS + "ORDER BY f.distance_km ASC, f.flight_date DESC, f.id DESC LIMIT 1")
                 .query(FlightQueries::toResponse)
                 .optional();
     }
