@@ -13,6 +13,7 @@ import {
   GlobeControl,
   Layer,
   Map,
+  Marker,
   NavigationControl,
   Source,
   type MapLayerMouseEvent,
@@ -39,8 +40,11 @@ const laneOffset: ExpressionSpecification = ["*", ["get", "lane"], LANE_SPACING]
  */
 const CLICK_REACH = [2, 5, 9]
 
-/** Mercator stretches towards the poles; framing a polar route up to 85° would zoom far out. */
-const MAX_FRAMED_LATITUDE = 78
+/**
+ * Mercator stretches towards the poles, so framing a box that reaches 85° zooms far out.
+ * 81° still shows the top of a polar route such as Shanghai to New York (79.5° north).
+ */
+const MAX_FRAMED_LATITUDE = 81
 
 function toMapBounds([west, south, east, north]: Bounds): LngLatBoundsLike {
   return [
@@ -77,14 +81,16 @@ export function FlightMap({
   const arcs = useMemo(() => buildFlightArcs(flights), [flights])
   const airports = useMemo(() => buildAirportPoints(flights), [flights])
 
-  // Where the map starts: framed around all routes, or the whole world when there are none.
-  // Only read when the map is created.
+  // Where the map starts: on the selected flight when the page was opened with one in the
+  // address, otherwise framed around all routes, or the whole world when there are none.
+  // The map only reads this when it is created.
   const initialViewState = useMemo(() => {
-    const bounds = boundsOf(arcs.features.map((feature) => feature.geometry))
+    const selected = arcs.features.find((feature) => feature.properties.flightId === selectedFlightId)
+    const bounds = boundsOf(selected ? [selected.geometry] : arcs.features.map((feature) => feature.geometry))
     return bounds
       ? { bounds: toMapBounds(bounds), fitBoundsOptions: { padding: 48, maxZoom: 5 } }
       : { longitude: 110, latitude: 25, zoom: 1.2 }
-  }, [arcs])
+  }, [arcs, selectedFlightId])
 
   useImperativeHandle(ref, () => ({
     showFlight(flightId) {
@@ -215,7 +221,8 @@ export function FlightMap({
             "circle-stroke-width": 1.5,
           }}
         />
-        {/* Text needs the basemap's font server, so there are no labels on the plain background. */}
+        {/* Text drawn by the map needs the basemap's font server. On the plain background
+            the labels are ordinary HTML instead (see the markers below). */}
         {!basemapFailed && (
           <Layer
             id="airport-labels"
@@ -235,6 +242,23 @@ export function FlightMap({
           />
         )}
       </Source>
+
+      {basemapFailed &&
+        airports.features.map(({ geometry, properties }) => (
+          <Marker
+            key={properties.iata}
+            longitude={geometry.coordinates[0]}
+            latitude={geometry.coordinates[1]}
+            anchor="top"
+            offset={[0, 5]}
+            // The label must not swallow clicks meant for the map underneath it.
+            style={{ pointerEvents: "none" }}
+          >
+            <span className="font-sans text-[11px] font-bold text-primary [text-shadow:0_0_2px_white,0_0_2px_white,0_0_2px_white]">
+              {properties.iata}
+            </span>
+          </Marker>
+        ))}
     </Map>
   )
 }

@@ -13,13 +13,18 @@ const NAV_ITEMS = [
   { to: "/stats", labelKey: "nav.stats", icon: ChartColumn },
 ] as const
 
-export function SiteHeader() {
+export function SiteHeader({ wide = false }: { wide?: boolean }) {
   const { t } = useTranslation()
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
       {/* On a phone the navigation wraps onto a second row; from "sm" up it is one row. */}
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:h-14 sm:flex-nowrap sm:gap-x-5 sm:px-6 sm:py-0">
+      <div
+        className={cn(
+          "mx-auto flex w-full flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 sm:h-14 sm:flex-nowrap sm:gap-x-5 sm:px-6 sm:py-0",
+          wide ? "max-w-7xl" : "max-w-5xl",
+        )}
+      >
         <Link to="/" className="flex items-center gap-2.5 rounded-lg font-semibold tracking-tight">
           <Logo className="size-7" />
           {/* On a phone only the mark is shown; the name stays available to screen readers. */}
