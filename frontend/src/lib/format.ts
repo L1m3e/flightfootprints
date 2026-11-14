@@ -17,12 +17,16 @@ export function useFormatters() {
 
   return useMemo(() => {
     const dateFormat = new Intl.DateTimeFormat(language, { dateStyle: "long" })
-    const numberFormat = new Intl.NumberFormat(language)
+    const numberFormat = new Intl.NumberFormat(language, { maximumFractionDigits: 0 })
+    const oneDecimalFormat = new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     const regionNames = new Intl.DisplayNames([language], { type: "region" })
     return {
       /** "2024-05-01" becomes "May 1, 2024" or "2024年5月1日". */
       date: (iso: string) => dateFormat.format(parseIsoDate(iso)),
+      /** A whole number with thousands separators: 187,654. */
       number: (value: number) => numberFormat.format(value),
+      /** One digit after the decimal point: 4.7. */
+      oneDecimal: (value: number) => oneDecimalFormat.format(value),
       /** ISO 3166 code to country name: "CN" becomes "China" or "中国". */
       country: (code: string) => regionNames.of(code) ?? code,
     }

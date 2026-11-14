@@ -4,12 +4,12 @@ import { AppLayout } from "@/app/AppLayout"
 import { PageLoading } from "@/components/PageLoading"
 import { HomePage } from "@/pages/HomePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
-import { StatsPage } from "@/pages/StatsPage"
 
 // Pages behind `lazy` are separate files that the browser downloads on the first visit to
 // that page. The map library alone is larger than the rest of the app, and most visits
 // start on the timeline, so it should not be part of what every visitor has to load.
-// The same goes for the form libraries, which only the sign-in and editing pages use.
+// The same goes for the chart library of the statistics page and for the form libraries,
+// which only the sign-in and editing pages use.
 //
 // HydrateFallback is what shows in the page area while such a file is on its way when the
 // site is opened directly on that page.
@@ -24,7 +24,11 @@ export const router = createBrowserRouter([
         HydrateFallback: PageLoading,
         lazy: async () => ({ Component: (await import("@/pages/MapPage")).MapPage }),
       },
-      { path: "stats", Component: StatsPage },
+      {
+        path: "stats",
+        HydrateFallback: PageLoading,
+        lazy: async () => ({ Component: (await import("@/pages/StatsPage")).StatsPage }),
+      },
       {
         path: "login",
         HydrateFallback: PageLoading,

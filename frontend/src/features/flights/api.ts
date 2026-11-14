@@ -72,12 +72,21 @@ export function airportSearchQuery(term: string) {
   })
 }
 
-/** After any change, the list is fetched again. A 401 also means the session is gone. */
+/**
+ * After any change, the list and the statistics are fetched again: both are computed
+ * from the flights. A 401 also means the session is gone.
+ */
 function useFlightMutation<TInput, TResult>(mutationFn: (input: TInput) => Promise<TResult>) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey }),
+        // The key is spelled out here; importing it from the stats feature would make the
+        // two features depend on each other.
+        queryClient.invalidateQueries({ queryKey: ["stats"] }),
+      ]),
     onError: (error) => {
       if (error instanceof ApiError && error.status === 401) {
         void queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })

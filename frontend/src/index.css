@@ -83,7 +83,11 @@
   --ring: oklch(0.62 0.05 262);
   --brand: oklch(0.77 0.16 72);
   --brand-foreground: oklch(0.27 0.06 60);
-  --chart-1: oklch(0.87 0 0);
+  /* The one colour charts draw their data in. It is checked, not picked by eye: its
+     lightness, saturation and contrast on the white card surface pass the palette
+     validator used for this project's charts. The value in the .dark block is its
+     checked counterpart for a dark surface. */
+  --chart-1: #2a78d6;
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
@@ -121,7 +125,7 @@
   --ring: oklch(0.556 0 0);
   --brand: oklch(0.77 0.16 72);
   --brand-foreground: oklch(0.27 0.06 60);
-  --chart-1: oklch(0.87 0 0);
+  --chart-1: #3987e5;
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
