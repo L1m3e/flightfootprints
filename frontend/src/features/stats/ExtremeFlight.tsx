@@ -1,8 +1,7 @@
-import { MapPinned } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { Link } from "react-router"
 
 import type { Flight } from "@/features/flights/api"
+import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
 import { kmToMiles } from "@/features/stats/units"
 import { useFormatters } from "@/lib/format"
 
@@ -35,13 +34,9 @@ export function ExtremeFlight({ title, flight }: { title: string; flight: Flight
         {[flight.flightNo, flight.airline].filter(Boolean).join(" · ")}
       </p>
 
-      <Link
-        to={`/map?flight=${flight.id}`}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium underline underline-offset-2"
-      >
-        <MapPinned className="size-4" aria-hidden="true" />
-        {t("stats.viewOnMap")}
-      </Link>
+      <div className="mt-3">
+        <ViewOnMapLink flightId={flight.id} />
+      </div>
     </div>
   )
 }

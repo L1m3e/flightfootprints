@@ -17,12 +17,15 @@ export function useFormatters() {
 
   return useMemo(() => {
     const dateFormat = new Intl.DateTimeFormat(language, { dateStyle: "long" })
+    const monthDayFormat = new Intl.DateTimeFormat(language, { month: "long", day: "numeric" })
     const numberFormat = new Intl.NumberFormat(language, { maximumFractionDigits: 0 })
     const oneDecimalFormat = new Intl.NumberFormat(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     const regionNames = new Intl.DisplayNames([language], { type: "region" })
     return {
       /** "2024-05-01" becomes "May 1, 2024" or "2024年5月1日". */
       date: (iso: string) => dateFormat.format(parseIsoDate(iso)),
+      /** The date without its year, for lists that are already grouped by year: "May 1" or "5月1日". */
+      monthDay: (iso: string) => monthDayFormat.format(parseIsoDate(iso)),
       /** A whole number with thousands separators: 187,654. */
       number: (value: number) => numberFormat.format(value),
       /** One digit after the decimal point: 4.7. */
