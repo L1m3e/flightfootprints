@@ -38,7 +38,7 @@ jobs:
         run: ./gradlew test
 
   frontend:
-    name: Frontend typecheck, lint and build
+    name: Frontend typecheck, lint, test and build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -61,6 +61,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm test
 
       - name: Build
         run: npm run build
