@@ -27,6 +27,19 @@ export function DeleteFlightButton({ flight }: { flight: Flight }) {
   const deleteFlight = useDeleteFlight()
   const [open, setOpen] = useState(false)
 
+  // The result is awaited here rather than handled in callbacks passed to mutate():
+  // deleting a flight removes its card, and this button with it, and TanStack Query
+  // skips those callbacks once the component is gone, so the message would never show.
+  async function confirmDelete() {
+    try {
+      await deleteFlight.mutateAsync(flight.id)
+      toast.success(t("flights.deleted"))
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+    setOpen(false)
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger render={<Button variant="ghost" size="sm" />}>
@@ -48,18 +61,7 @@ export function DeleteFlightButton({ flight }: { flight: Flight }) {
           <AlertDialogAction
             variant="destructive"
             disabled={deleteFlight.isPending}
-            onClick={() =>
-              deleteFlight.mutate(flight.id, {
-                onSuccess: () => {
-                  setOpen(false)
-                  toast.success(t("flights.deleted"))
-                },
-                onError: (error) => {
-                  setOpen(false)
-                  toast.error(errorMessage(error))
-                },
-              })
-            }
+            onClick={() => void confirmDelete()}
           >
             {t("flights.delete")}
           </AlertDialogAction>
