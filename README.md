@@ -11,7 +11,8 @@ The project is being built in stages. See the [roadmap](#roadmap) for what exist
 | -------- | ------------------------------------------------------------------------------------------------------------------ |
 | Backend  | Java 25, Spring Boot 4 (Web MVC), Spring Security, Spring Data JDBC, Flyway, PostgreSQL 18                         |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS 4, shadcn/ui, React Router, TanStack Query, react-hook-form, zod, i18next |
-| Tests    | JUnit, Testcontainers                                                                                              |
+| Map      | MapLibre GL JS through react-map-gl, OpenFreeMap vector tiles, Turf for great-circle arcs                          |
+| Tests    | JUnit and Testcontainers (backend), Vitest (frontend)                                                              |
 | CI       | GitHub Actions                                                                                                     |
 
 The interface is available in Chinese and English.
@@ -75,6 +76,10 @@ The backend creates or updates the administrator on every start, so changing
 `ADMIN_PASSWORD` and restarting is how the password is rotated. Without the two `ADMIN_`
 variables there is no administrator and the site is read-only.
 
+The frontend has one optional build-time setting: `VITE_MAP_STYLE_URL`, the address of a
+MapLibre style to use as the basemap instead of OpenFreeMap's. Put it in
+`frontend/.env.local`.
+
 ## Accounts and permissions
 
 | Who             | Can read | Can add, change and delete flights |
@@ -86,6 +91,21 @@ variables there is no administrator and the site is read-only.
 Signing in uses a session cookie. Every request that changes something must also carry
 the CSRF token: the backend sets it in the `XSRF-TOKEN` cookie and expects the same value
 in the `X-XSRF-TOKEN` header.
+
+## The map
+
+Every flight is drawn as its own great-circle arc, the shortest path over the Earth's
+surface. Flights between the same two airports lie side by side. Clicking an arc, or its
+row in the list next to the map, shows the details of that flight; the selection is part
+of the address (`/map?flight=12`), so it can be linked to.
+
+Routes across the 180° meridian, such as Tokyo to Los Angeles, need care: the arc is
+split into two lines that meet exactly on the meridian, which the map then shows as one
+unbroken route. The map can also be switched to a globe.
+
+The basemap comes from [OpenFreeMap](https://openfreemap.org/), a free service without an
+API key. If it cannot be reached, the routes and airports are still drawn, on a plain
+background.
 
 ## API
 
@@ -114,7 +134,7 @@ great-circle distance between the two airports with the haversine formula.
 cd backend && ./gradlew test
 
 # Frontend
-cd frontend && npm run typecheck && npm run lint && npm run build
+cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
 The same checks run in GitHub Actions on every push to `main` and on every pull request.
@@ -139,7 +159,7 @@ database keeps the airports it already has.
 
 - [x] Project skeleton: monorepo, Flyway migrations, airport import, health check
 - [x] Accounts, admin login, and creating, editing and deleting flights
-- [ ] World map with great-circle routes
+- [x] World map with great-circle routes
 - [ ] Statistics page and timeline
 - [ ] Aircraft side views with airline liveries
 - [ ] Dockerfile, production Compose file and deployment guide
@@ -147,6 +167,9 @@ database keeps the airports it already has.
 ## Credits
 
 - Airport data: [OurAirports](https://ourairports.com/data/), public domain
+- Basemap: [OpenFreeMap](https://openfreemap.org/), © [OpenMapTiles](https://www.openmaptiles.org/),
+  data from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
+- Map rendering: [MapLibre GL JS](https://maplibre.org/), BSD 3-Clause License
 - UI components: [shadcn/ui](https://ui.shadcn.com/) and [Base UI](https://base-ui.com/), MIT License
 - Typeface: [Geist](https://vercel.com/font), SIL Open Font License 1.1
 - Icons: [Lucide](https://lucide.dev/), ISC License
