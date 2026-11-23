@@ -94,6 +94,7 @@ nano .env
 | `POSTGRES_PASSWORD`    | A long random password, e.g. the output of `openssl rand -hex 24`.               |
 | `ADMIN_USERNAME`       | Name of the one account that may add, change and delete flights.                 |
 | `ADMIN_PASSWORD`       | Its password, at least 12 characters.                                            |
+| `ADDITIONAL_ADMINS`    | Optional: more administrators, as `name:password` pairs separated by commas.     |
 | `REGISTRATION_ENABLED` | `false` unless visitors should be able to create (read-only) accounts.           |
 
 `.env` holds every secret of the site. It is git-ignored and exists only on the server.

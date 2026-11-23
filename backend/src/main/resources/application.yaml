@@ -34,8 +34,11 @@ server:
 
 app:
   auth:
-    # The site's only administrator. Leave both empty to run without one (read-only site).
+    # The site's administrator. Leave both empty to run without one (read-only site).
     admin-username: ${ADMIN_USERNAME:}
     admin-password: ${ADMIN_PASSWORD:}
+    # More administrators, when one is not enough: username:password pairs separated by
+    # commas. They follow the same rules, and one that is removed here loses the role.
+    additional-admins: ${ADDITIONAL_ADMINS:}
     # Set REGISTRATION_ENABLED=false to stop visitors from creating accounts.
     registration-enabled: ${REGISTRATION_ENABLED:true}

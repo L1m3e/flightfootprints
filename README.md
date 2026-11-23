@@ -87,13 +87,15 @@ git ignores it.
 
 | Variable               | Meaning                                                                               |
 | ---------------------- | ------------------------------------------------------------------------------------- |
-| `ADMIN_USERNAME`       | Username of the site's only administrator.                                            |
+| `ADMIN_USERNAME`       | Username of the site's administrator.                                                 |
 | `ADMIN_PASSWORD`       | The administrator's password, at least 12 characters. Only a hash of it is stored.    |
+| `ADDITIONAL_ADMINS`    | More administrators: `name:password` pairs separated by commas. Optional.             |
 | `REGISTRATION_ENABLED` | `false` stops visitors from creating accounts. Defaults to `true`.                    |
 
-The backend creates or updates the administrator on every start, so changing
-`ADMIN_PASSWORD` and restarting is how the password is rotated. Without the two `ADMIN_`
-variables there is no administrator and the site is read-only.
+The backend makes its accounts agree with these settings on every start. Changing a
+password and restarting is how it is rotated, and an administrator who is removed from the
+settings keeps the account but loses the right to change flights. Without any
+administrator configured the site is read-only.
 
 The frontend has one optional build-time setting: `VITE_MAP_STYLE_URL`, the address of a
 MapLibre style to use as the basemap instead of OpenFreeMap's. Put it in

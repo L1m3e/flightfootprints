@@ -1,13 +1,17 @@
 package io.github.l1m3e.flightfootprints.auth;
 
+import static io.github.l1m3e.flightfootprints.TestRequests.csrfToken;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+
+import java.util.List;
 
 import io.github.l1m3e.flightfootprints.IntegrationTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -93,8 +97,100 @@ class AdminAccountSynchronizerTests extends IntegrationTest {
                 .withMessageContaining("ADMIN_USERNAME");
     }
 
-    private void synchronizeWith(String username, String password) {
-        new AdminAccountSynchronizer(users, passwordEncoder, new AuthProperties(username, password, true))
+    @Test
+    void additionalAdministratorsGetTheRoleAndCanSignIn() {
+        synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "amy:first-long-password", "ben:second-long-password");
+
+        assertThat(users.findByUsername("amy").orElseThrow().role()).isEqualTo(Role.ADMIN);
+        assertThat(users.findByUsername("ben").orElseThrow().role()).isEqualTo(Role.ADMIN);
+        assertThat(users.findByUsername(ADMIN_USERNAME).orElseThrow().role()).isEqualTo(Role.ADMIN);
+        assertThat(postLoginForm("amy", "first-long-password")).hasStatus(HttpStatus.NO_CONTENT);
+        assertThat(postLoginForm("ben", "second-long-password")).hasStatus(HttpStatus.NO_CONTENT);
+        // Each account has its own password.
+        assertThat(postLoginForm("amy", "second-long-password")).hasStatus(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void anAdditionalAdministratorMayDoWhatTheFirstOneMay() {
+        synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "amy:first-long-password");
+
+        assertThat(mvc.post().uri("/api/flights")
+                .session(signIn("amy", "first-long-password"))
+                .with(csrfToken())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"flightDate": "2024-05-01", "airline": "Test Air", "fromIata": "PVG", "toIata": "NRT"}
+                        """))
+                .hasStatus(HttpStatus.CREATED);
+    }
+
+    @Test
+    void anAdministratorRemovedFromTheConfigurationKeepsTheAccountButLosesTheRole() {
+        synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "amy:first-long-password");
+
+        synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD);
+
+        assertThat(users.findByUsername("amy").orElseThrow().role()).isEqualTo(Role.USER);
+        assertThat(postLoginForm("amy", "first-long-password")).hasStatus(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    void additionalAdministratorsAloneAreEnough() {
+        synchronizeWith("", "", "amy:first-long-password");
+
+        assertThat(users.findByUsername("amy").orElseThrow().role()).isEqualTo(Role.ADMIN);
+        assertThat(users.findByUsername(ADMIN_USERNAME).orElseThrow().role()).isEqualTo(Role.USER);
+    }
+
+    @Test
+    void aPasswordMayContainColonsAndEmptyEntriesAreSkipped() {
+        synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "", "amy:pass:with:colons", " ");
+
+        assertThat(postLoginForm("amy", "pass:with:colons")).hasStatus(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    void aBadlyWrittenAdditionalAdministratorStopsTheStartup() {
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "no-colon-in-this-entry"))
+                .withMessageContaining("username:password");
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "amy:too-short"))
+                .withMessageContaining("at least 12 characters")
+                .withMessageContaining("amy");
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "a b:first-long-password"))
+                .withMessageContaining("ADDITIONAL_ADMINS");
+        // The same account twice, also when only the case differs.
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "Captain:first-long-password"))
+                .withMessageContaining("more than once");
+    }
+
+    @Test
+    void aMistakeInTheConfigurationIsReportedWithoutThePassword() {
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith(ADMIN_USERNAME, ADMIN_PASSWORD, "amy:first-long-password",
+                        "Amy:another-long-secret"))
+                .withMessageNotContaining("first-long-password")
+                .withMessageNotContaining("another-long-secret");
+        assertThat(new AuthProperties("captain", "primary-secret", List.of("amy:first-long-password"), true).toString())
+                .doesNotContain("primary-secret", "first-long-password");
+    }
+
+    @Test
+    void aFailedSynchronizationChangesNothing() {
+        // The mistake is found before anyone is demoted or created.
+        assertThatIllegalStateException()
+                .isThrownBy(() -> synchronizeWith("newcaptain", "another-long-password", "amy:too-short"));
+
+        assertThat(users.findByUsername(ADMIN_USERNAME).orElseThrow().role()).isEqualTo(Role.ADMIN);
+        assertThat(users.findByUsername("newcaptain")).isEmpty();
+    }
+
+    private void synchronizeWith(String username, String password, String... additionalAdmins) {
+        new AdminAccountSynchronizer(users, passwordEncoder,
+                new AuthProperties(username, password, List.of(additionalAdmins), true))
                 .synchronize();
     }
 }

@@ -42,6 +42,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADDITIONAL_ADMINS: ${ADDITIONAL_ADMINS:-}
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
       # A ceiling for Java's memory, so that the database keeps its share on a small server.
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xmx320m}
