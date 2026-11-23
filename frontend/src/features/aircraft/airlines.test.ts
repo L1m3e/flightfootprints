@@ -33,6 +33,46 @@ describe("airlineOf", () => {
     }
   })
 
+  it("has no designator that two airlines share", () => {
+    // The lookup keeps one airline per designator, so a shared one would silently hide an airline.
+    const designators = AIRLINES.flatMap((airline) => [airline.iata, airline.icao])
+    const repeated = designators.filter((code, index) => designators.indexOf(code) !== index)
+    expect(repeated).toEqual([])
+  })
+
+  it.each([
+    // Names that differ by a word or two.
+    ["Air China", "CA"],
+    ["China Airlines", "CI"],
+    ["春秋航空", "9C"],
+    ["春秋航空日本", "IJ"],
+    ["Jetstar", "JQ"],
+    ["Jetstar Japan", "GK"],
+    ["联合航空", "UA"],
+    ["中国联合航空", "KN"],
+    ["国泰航空", "CX"],
+    ["国泰港龙航空", "KA"],
+    ["Virgin Atlantic", "VS"],
+    ["Virgin Australia", "VA"],
+    ["Hong Kong Airlines", "HX"],
+    ["Hong Kong Express", "UO"],
+  ])("tells %j apart: %s", (name, expected) => {
+    expect(airlineOf(null, name)?.iata).toBe(expected)
+  })
+
+  it.each([
+    // Designators that start with a digit, or end with one.
+    ["9C8887", "9C"],
+    ["3U8888", "3U"],
+    ["7C2201", "7C"],
+    ["8L9801", "8L"],
+    ["B6915", "B6"],
+    ["G54501", "G5"],
+    ["U28435", "U2"],
+  ])("finds the airline of %s", (flightNo, expected) => {
+    expect(airlineOf(flightNo, null)?.iata).toBe(expected)
+  })
+
   it("lets the flight number decide when the name says something else", () => {
     // A ticket sold by one airline for a flight under another airline's number.
     expect(airlineOf("CA818", "United Airlines")?.iata).toBe("CA")

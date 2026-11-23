@@ -30,7 +30,7 @@ is drawn:
 |                | Recognised                               | Drawn              |
 | -------------- | ---------------------------------------- | ------------------ |
 | Aircraft types | 22, see `AIRCRAFT_TYPES`                 | `B748` (747-8)     |
-| Airlines       | 14, see `AIRLINES`                       | `CA` (Air China)   |
+| Airlines       | 110, see `AIRLINES`                      | `CA` (Air China)   |
 
 The 747-8 and the Air China livery are first drawings that prove the pipeline works.
 They may be replaced.

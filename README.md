@@ -147,7 +147,7 @@ or has not been drawn, the card has no picture; an unknown airline gets an unpai
 aircraft. A flight number that one airline sells for a flight operated by another shows
 the selling airline's colours.
 
-The site recognises 22 aircraft types and 14 airlines. One shape (Boeing 747-8) and one
+The site recognises 22 aircraft types and 110 airlines. One shape (Boeing 747-8) and one
 livery (Air China) are drawn so far. What exists and how to add a drawing is described in
 [frontend/src/features/aircraft](frontend/src/features/aircraft/README.md).
 

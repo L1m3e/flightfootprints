@@ -17,10 +17,16 @@ describe("drawingFor", () => {
   })
 
   it("leaves the aircraft unpainted for an airline it does not know", () => {
-    expect(drawingFor({ flightNo: "LH720", airline: "Lufthansa", aircraft: "B748" })).toEqual({
+    expect(drawingFor({ flightNo: "ZZ100", airline: "Some Unknown Air", aircraft: "B748" })).toEqual({
       shape: SHAPES.B748,
       livery: PLAIN_LIVERY,
     })
+  })
+
+  it("leaves it unpainted as well for an airline it knows but has no livery for", () => {
+    // Skipped once Lufthansa has a livery: there is then nothing left to check here.
+    if (LIVERIES.LH) return
+    expect(drawingFor({ flightNo: "LH720", airline: "Lufthansa", aircraft: "B748" })?.livery).toBe(PLAIN_LIVERY)
   })
 
   it("draws nothing when the aircraft type is missing or not recognised", () => {
