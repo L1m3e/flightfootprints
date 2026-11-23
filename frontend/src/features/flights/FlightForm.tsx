@@ -11,6 +11,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
+import { AIRCRAFT_TYPES } from "@/features/aircraft/aircraftTypes"
 import { AirportCombobox } from "@/features/flights/AirportCombobox"
 import { CABINS, type Airport, type Flight, type FlightInput } from "@/features/flights/api"
 import { ApiError, type FieldProblem } from "@/lib/api"
@@ -257,12 +258,22 @@ export function FlightForm({
           <FieldLabel htmlFor="aircraft">
             {t("flights.aircraft")} {optional}
           </FieldLabel>
+          {/* Any text is accepted. The list only offers the spellings the site is sure to
+              recognise, so that it can show a drawing of the aircraft. */}
           <Input
             id="aircraft"
+            list="aircraft-types"
             placeholder={t("flights.aircraftPlaceholder")}
             aria-invalid={!!errors.aircraft}
             {...form.register("aircraft")}
           />
+          <datalist id="aircraft-types">
+            {Object.values(AIRCRAFT_TYPES).map((type) => (
+              <option key={type.name} value={type.name}>
+                {type.name}
+              </option>
+            ))}
+          </datalist>
           <FieldError errors={[errors.aircraft]} />
         </Field>
 
