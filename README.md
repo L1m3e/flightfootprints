@@ -15,6 +15,7 @@ The project is being built in stages. See the [roadmap](#roadmap) for what exist
 | Charts   | Recharts                                                                                                           |
 | Tests    | JUnit and Testcontainers (backend), Vitest (frontend)                                                              |
 | CI       | GitHub Actions                                                                                                     |
+| Deploy   | Docker (one multi-stage image), Docker Compose, Caddy for HTTPS                                                    |
 
 The interface is available in Chinese and English.
 
@@ -23,7 +24,10 @@ The interface is available in Chinese and English.
 ```
 backend/       Spring Boot API (Gradle)
 frontend/      React single-page app (Vite)
+deploy/        Docker Compose setup for the production server
+docs/          Deployment guide
 scripts/       Maintenance scripts
+Dockerfile     Builds frontend and backend into one image
 compose.yaml   PostgreSQL for local development
 .env.example   Template for the settings described under "Configuration"
 ```
@@ -60,6 +64,20 @@ The development database listens on `127.0.0.1:5433` (database, user and passwor
 `flightfootprints`). Its data lives in a Docker volume and survives restarts. To start
 over with an empty database, run `docker compose down -v` in the repository root; this
 deletes all local development data.
+
+## Running in production
+
+In production the whole site is one Docker image: the frontend is built first and ends up
+inside the Spring Boot jar, which serves it next to the API. Nothing is copied by hand.
+
+```bash
+docker build -t flightfootprints .
+```
+
+[`deploy/`](deploy/compose.yaml) runs that image on a single server with Docker Compose,
+together with PostgreSQL and with Caddy, which provides HTTPS. Only Caddy is reachable
+from outside. [docs/deployment.md](docs/deployment.md) walks through it: creating the
+server, DNS, configuration, updates and backups.
 
 ## Configuration
 
@@ -167,7 +185,8 @@ cd backend && ./gradlew test
 cd frontend && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-The same checks run in GitHub Actions on every push to `main` and on every pull request.
+The same checks run in GitHub Actions on every push to `main` and on every pull request,
+along with a build of the Docker image.
 
 ## Airport data
 
@@ -192,7 +211,7 @@ database keeps the airports it already has.
 - [x] World map with great-circle routes
 - [x] Statistics page and timeline
 - [ ] Aircraft side views with airline liveries (postponed; a first attempt is on the `aircraft-drawings` branch)
-- [ ] Dockerfile, production Compose file and deployment guide
+- [x] Dockerfile, production Compose file and deployment guide
 
 ## Credits
 
