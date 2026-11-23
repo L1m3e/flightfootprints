@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
 import { buttonVariants } from "@/components/ui/button"
-import { FlightAircraft } from "@/features/aircraft/FlightAircraft"
 import type { Airport, Flight } from "@/features/flights/api"
 import { DeleteFlightButton } from "@/features/flights/DeleteFlightButton"
 import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
@@ -22,8 +21,6 @@ export function FlightCard({ flight, canEdit }: { flight: Flight; canEdit: boole
 
   return (
     <article className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      {/* Across the top of the card, when there is a drawing of this aircraft. */}
-      <FlightAircraft flight={flight} className="px-4 py-3 sm:px-6 sm:py-4" />
       <div className="p-4 sm:p-5">
         <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
           <time dateTime={flight.flightDate} className="font-medium">
