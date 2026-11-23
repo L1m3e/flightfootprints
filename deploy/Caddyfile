@@ -1,0 +1,11 @@
+# Caddy answers visitors and passes every request on to the application.
+#
+# SITE_ADDRESS comes from .env:
+#   flights.example.com   HTTPS, with a certificate that Caddy gets and renews by itself
+#   :80                   plain HTTP on whatever name or address the server is reached by
+{$SITE_ADDRESS} {
+	# Compress text on its way out: the JavaScript of the site shrinks to about a third.
+	encode zstd gzip
+
+	reverse_proxy app:8080
+}
