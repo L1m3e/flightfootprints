@@ -37,7 +37,9 @@ They may be replaced.
 
 ## The look to aim for
 
-- An exact side view, nose to the left, in realistic proportions. Not a cartoon.
+- An exact side view, nose to the right, in realistic proportions. Simple, but not a
+  cartoon. (The 747-8 that is already there still faces left; it was drawn before this
+  was settled.)
 - Flat fills, no gradients or shadows: white upper fuselage, light grey belly, wing,
   engines and tailplane. Thin dark outlines.
 - The livery on top: cheatline, a row of small windows, door outlines, cockpit windows,
@@ -90,6 +92,11 @@ drawings are delivered as one SVG per aircraft type and airline, change what
 `drawingFor()` returns and what `<FlightAircraft>` renders. Nothing else in the app
 depends on how a drawing is made. Keep the two rules above: no picture for an unknown
 type, the unpainted aircraft for an unknown airline.
+
+Finished files go into `frontend/src/assets/aircraft/`, one aircraft per file, named
+after the ICAO type designator and the IATA airline designator: `B748_CA.svg` is a 747-8
+of Air China, `B748.svg` the unpainted 747-8. SVG with a transparent background is
+preferred; a PNG at least 2400 pixels wide works too.
 
 ## Checks
 
