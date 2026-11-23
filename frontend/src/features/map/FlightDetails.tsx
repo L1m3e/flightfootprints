@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
 import { Button, buttonVariants } from "@/components/ui/button"
+import { FlightAircraft } from "@/features/aircraft/FlightAircraft"
 import { useSession } from "@/features/auth/api"
 import type { Airport, Flight } from "@/features/flights/api"
 import { useFormatters } from "@/lib/format"
@@ -46,6 +47,8 @@ export function FlightDetails({
         {flight.flightNo && <span className="font-mono">{flight.flightNo} · </span>}
         {flight.airline}
       </p>
+
+      <FlightAircraft flight={flight} className="mt-3 rounded-lg px-3 py-2.5" />
 
       <dl className="mt-3 space-y-2 text-sm">
         <Place label={t("flights.from")} airport={flight.from} />

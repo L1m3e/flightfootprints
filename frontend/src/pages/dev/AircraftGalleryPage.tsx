@@ -4,8 +4,8 @@ import { AircraftDrawing } from "@/features/aircraft/draw/AircraftDrawing"
 import { LIVERIES, PLAIN_LIVERY } from "@/features/aircraft/draw/liveries"
 import { SHAPES } from "@/features/aircraft/draw/shapes"
 
-// The band behind a drawing. One colour for every aircraft, like a patch of sky.
-const SKY = "bg-[#dce8f3]"
+// The same band of sky the pages put behind a drawing.
+const SKY = "bg-aircraft-sky"
 
 /**
  * Every aircraft drawing in every livery on one page, at the two widths a flight card
