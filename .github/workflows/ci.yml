@@ -67,3 +67,13 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  image:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Only checks that the Dockerfile still produces an image. Nothing is pushed anywhere.
+      - name: Build the image
+        run: docker build --tag flightfootprints:ci .
