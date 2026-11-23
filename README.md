@@ -3,6 +3,8 @@
 A personal site that keeps a record of every flight I have taken: a timeline of flights,
 the routes drawn on a world map, and statistics about distance, airports and airlines.
 
+**Live site: <https://flightfootprints.duckdns.org>**
+
 The project is being built in stages. See the [roadmap](#roadmap) for what exists today.
 
 ## Tech stack
