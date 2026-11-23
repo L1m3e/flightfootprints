@@ -1,0 +1,28 @@
+# What the image build must not read. It keeps secrets and local build output out of the
+# build, and makes the upload to the Docker daemon small.
+
+# Secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Version control and tooling
+.git
+.github
+.claude
+.DS_Store
+
+# Build output and downloaded dependencies: the image builds its own
+**/node_modules
+**/dist
+**/build
+**/.gradle
+backend/bin
+backend/out
+
+# Not part of the application
+deploy
+docs
+scripts
+*.md

@@ -1,0 +1,11 @@
+# Extra settings for production. The Docker image turns this profile on
+# (SPRING_PROFILES_ACTIVE=prod); everything in application.yaml still applies.
+
+server:
+  # In production a reverse proxy (Caddy) answers the visitor over HTTPS and passes the
+  # request on to this application over plain HTTP, adding X-Forwarded-* headers that say
+  # what the visitor really asked for. Trusting them lets the application see that the
+  # request was secure: the session and CSRF cookies then get the Secure flag, and
+  # redirects point to https. Only proxies on private networks are trusted, which is
+  # where the proxy of the Compose setup lives.
+  forward-headers-strategy: native
