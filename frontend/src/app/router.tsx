@@ -50,6 +50,19 @@ export const router = createBrowserRouter([
         HydrateFallback: PageLoading,
         lazy: async () => ({ Component: (await import("@/features/flights/FlightFormPages")).EditFlightPage }),
       },
+      // Every aircraft drawing on one page, for working on them. import.meta.env.DEV is
+      // false in a production build, so the route and its page are left out of it.
+      ...(import.meta.env.DEV
+        ? [
+            {
+              path: "dev/aircraft",
+              HydrateFallback: PageLoading,
+              lazy: async () => ({
+                Component: (await import("@/pages/dev/AircraftGalleryPage")).AircraftGalleryPage,
+              }),
+            },
+          ]
+        : []),
       { path: "*", Component: NotFoundPage },
     ],
   },
