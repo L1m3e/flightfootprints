@@ -45,6 +45,15 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+// The built frontend goes into the jar as static content, which is where Spring Boot
+// serves files from. `npm run build` in ../frontend creates the directory; while it does
+// not exist, nothing is added and the backend builds on its own.
+tasks.processResources {
+    from("../frontend/dist") {
+        into("static")
+    }
+}
+
 tasks.withType<Test> {
     useJUnitPlatform()
     // Print each test's result, and the full stack trace of failures, to the console.
