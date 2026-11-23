@@ -1,7 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
-import { useMemo } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { useEffect, useMemo, useRef } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { z } from "zod"
@@ -12,11 +13,15 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { AIRCRAFT_TYPES } from "@/features/aircraft/aircraftTypes"
+import { airlineName, airlineOfFlightNo } from "@/features/flights/airlines"
 import { AirportCombobox } from "@/features/flights/AirportCombobox"
-import { CABINS, type Airport, type Flight, type FlightInput } from "@/features/flights/api"
+import { airlinesQuery, CABINS, type Airline, type Airport, type Flight, type FlightInput } from "@/features/flights/api"
 import { ApiError, type FieldProblem } from "@/lib/api"
 import { isoDateFromToday } from "@/lib/format"
 import { useErrorMessage } from "@/lib/useErrorMessage"
+
+// One empty list for "not loaded yet", so that it is the same value on every render.
+const NO_AIRLINES: Airline[] = []
 
 // Same rule as the backend: airline designator, up to four digits, optional letter.
 const FLIGHT_NO_PATTERN = /^[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?$/
@@ -137,7 +142,7 @@ export function FlightForm({
   /** Saves the flight. If it rejects, the form shows why and stays open. */
   onSubmit: (input: FlightInput) => Promise<void>
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const errorMessage = useErrorMessage()
   // One day of slack, like the backend: "today" depends on where the visitor is.
   const latestDate = isoDateFromToday(1)
@@ -149,6 +154,25 @@ export function FlightForm({
     defaultValues: toFormValues(flight),
   })
   const { errors, isSubmitting } = form.formState
+
+  // The start of a flight number names the airline ("CA" in CA818), so the airline field
+  // can be filled in from it. What was filled in is remembered: the form may replace its
+  // own suggestion when the flight number changes, but never something the user typed.
+  const { data: airlines = NO_AIRLINES } = useQuery(airlinesQuery)
+  const flightNo = useWatch({ control: form.control, name: "flightNo" })
+  const filledIn = useRef<string | null>(null)
+  useEffect(() => {
+    const airline = airlineOfFlightNo(airlines, flightNo)
+    if (!airline) return
+
+    const name = airlineName(airline, i18n.language)
+    const current = form.getValues("airline")
+    if (current === name) return
+    if (current.trim() !== "" && current !== filledIn.current) return
+
+    filledIn.current = name
+    form.setValue("airline", name, { shouldDirty: true, shouldValidate: true })
+  }, [airlines, flightNo, form, i18n.language])
 
   async function submit(values: ValidValues) {
     try {
@@ -207,12 +231,24 @@ export function FlightForm({
 
         <Field data-invalid={!!errors.airline}>
           <FieldLabel htmlFor="airline">{t("flights.airline")}</FieldLabel>
+          {/* Any name is accepted: the list only offers the airlines the site knows. */}
           <Input
             id="airline"
+            list="airline-names"
             placeholder={t("flights.airlinePlaceholder")}
             aria-invalid={!!errors.airline}
+            aria-describedby="airline-hint"
             {...form.register("airline")}
           />
+          <datalist id="airline-names">
+            {airlines.map((airline) => (
+              <option key={airline.iata} value={airlineName(airline, i18n.language)}>
+                {/* The code and the name in the other language, to find it by either. */}
+                {airline.iata} · {i18n.language.startsWith("zh") ? airline.name : (airline.nameZh ?? airline.name)}
+              </option>
+            ))}
+          </datalist>
+          <FieldDescription id="airline-hint">{t("flights.airlineHint")}</FieldDescription>
           <FieldError errors={[errors.airline]} />
         </Field>
 
@@ -258,8 +294,8 @@ export function FlightForm({
           <FieldLabel htmlFor="aircraft">
             {t("flights.aircraft")} {optional}
           </FieldLabel>
-          {/* Any text is accepted. The list only offers the spellings the site is sure to
-              recognise, so that it can show a drawing of the aircraft. */}
+          {/* Any text is accepted. The list offers common types in one spelling, so that the
+              same aircraft is not written three different ways. */}
           <Input
             id="aircraft"
             list="aircraft-types"

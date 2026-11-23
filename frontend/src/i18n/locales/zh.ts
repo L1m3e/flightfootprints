@@ -135,6 +135,7 @@ const zh: typeof en = {
     flightNoHint: "选填，例如 MU587。",
     airline: "航空公司",
     airlinePlaceholder: "例如 中国东方航空",
+    airlineHint: "填写航班号后会自动填入，也可以自己输入。",
     from: "出发",
     to: "到达",
     airportPlaceholder: "IATA 代码、城市或机场名",

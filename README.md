@@ -131,26 +131,6 @@ PostgreSQL does the counting, one query per figure, so the application never loa
 flight just to add them up. Airline names are free text and are grouped without regard to
 upper and lower case.
 
-## Aircraft drawings
-
-A flight card shows a side view of the aircraft in the airline's colours when the site
-has a drawing for it. Both are worked out from what was typed in:
-
-- the airline from the first two characters of the flight number (`CA` in `CA818`), or
-  from the airline's name when there is no flight number
-- the aircraft type from the free-text aircraft field, which understands spellings such
-  as `Boeing 747-8`, `B748`, `747-8i` and `波音747-8`
-
-A drawing is put together from two separate pieces of data, the shape of an aircraft type
-and the livery of an airline, so any type can wear any livery. When the type is unknown
-or has not been drawn, the card has no picture; an unknown airline gets an unpainted
-aircraft. A flight number that one airline sells for a flight operated by another shows
-the selling airline's colours.
-
-The site recognises 22 aircraft types and 110 airlines. One shape (Boeing 747-8) and one
-livery (Air China) are drawn so far. What exists and how to add a drawing is described in
-[frontend/src/features/aircraft](frontend/src/features/aircraft/README.md).
-
 ## API
 
 Every error is returned as an RFC 9457 problem document (`application/problem+json`).
@@ -164,10 +144,15 @@ Every error is returned as an RFC 9457 problem document (`application/problem+js
 | `PUT`, `DELETE`     | `/api/flights/{id}`  | administrator   | Change or delete a flight                    |
 | `GET`               | `/api/stats`         | everyone        | Totals, rankings and flights per year        |
 | `GET`               | `/api/airports?q=`   | everyone        | Search airports by code, city or name        |
+| `GET`               | `/api/airlines`      | everyone        | Airlines a flight number can belong to       |
 | `GET`               | `/api/auth/me`       | everyone        | Who is signed in                             |
 | `POST`              | `/api/auth/register` | visitors        | Create a regular account                     |
 | `POST`              | `/api/auth/login`    | visitors        | Sign in (form fields `username`, `password`) |
 | `POST`              | `/api/auth/logout`   | signed-in users | Sign out                                     |
+
+The start of a flight number names the airline (`CA` in `CA818`), so the flight form fills
+in the airline from it. The 110 airlines it knows are created by a Flyway migration; any
+other airline can still be typed in.
 
 The distance of a flight is never sent by the client: the backend computes the
 great-circle distance between the two airports with the haversine formula.
@@ -206,7 +191,7 @@ database keeps the airports it already has.
 - [x] Accounts, admin login, and creating, editing and deleting flights
 - [x] World map with great-circle routes
 - [x] Statistics page and timeline
-- [ ] Aircraft side views with airline liveries (shown on the timeline and the map; one aircraft and one livery drawn so far)
+- [ ] Aircraft side views with airline liveries (postponed; a first attempt is on the `aircraft-drawings` branch)
 - [ ] Dockerfile, production Compose file and deployment guide
 
 ## Credits
@@ -216,8 +201,6 @@ database keeps the airports it already has.
   data from [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
 - Map rendering: [MapLibre GL JS](https://maplibre.org/), BSD 3-Clause License
 - Charts: [Recharts](https://recharts.org/), MIT License
-- Aircraft drawings: made for this project. Airline names, liveries and logos belong to
-  the airlines and are shown only to identify them.
 - UI components: [shadcn/ui](https://ui.shadcn.com/) and [Base UI](https://base-ui.com/), MIT License
 - Typeface: [Geist](https://vercel.com/font), SIL Open Font License 1.1
 - Icons: [Lucide](https://lucide.dev/), ISC License

@@ -132,6 +132,7 @@ const en = {
     flightNoHint: "Optional, for example MU587.",
     airline: "Airline",
     airlinePlaceholder: "For example China Eastern",
+    airlineHint: "Filled in from the flight number. You can also type it yourself.",
     from: "From",
     to: "To",
     airportPlaceholder: "IATA code, city or airport name",

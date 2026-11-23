@@ -46,6 +46,25 @@ export interface FlightInput {
   notes: string | null
 }
 
+/** An airline a flight number can be matched to. */
+export interface Airline {
+  /** Two-character IATA designator, the start of a flight number: CA in CA818. */
+  iata: string
+  /** Three-letter ICAO designator: CCA. */
+  icao: string
+  name: string
+  nameZh: string | null
+  /** Other names people use for the airline. */
+  aliases: string[]
+}
+
+export const airlinesQuery = queryOptions({
+  queryKey: ["airlines"],
+  queryFn: () => api.get<Airline[]>("/api/airlines"),
+  // Airlines do not change while the page is open.
+  staleTime: Infinity,
+})
+
 export const flightsQuery = queryOptions({
   queryKey: ["flights"],
   queryFn: () => api.get<Flight[]>("/api/flights"),
