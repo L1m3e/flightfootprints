@@ -6,6 +6,7 @@ import io.github.l1m3e.flightfootprints.airport.Airport;
 import io.github.l1m3e.flightfootprints.flight.FlightAirline;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.AirlineCount;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.AirportCount;
+import io.github.l1m3e.flightfootprints.stats.StatsResponse.MonthCount;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.YearCount;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -123,6 +124,30 @@ class StatsQueries {
                 ORDER BY years.year
                 """)
                 .query(YearCount.class)
+                .list();
+    }
+
+    List<MonthCount> flightsPerMonth() {
+        // Like flightsPerYear, one step finer: every month from January of the year of the
+        // first flight to December of the year of the last one. Whole years, so that a log
+        // with a single flight still gives twelve months and not one lonely column.
+        // date_trunc turns a date into a timestamp (without time zone), which is what the
+        // series is made of, so the join compares like with like.
+        return jdbcClient.sql("""
+                SELECT extract(year FROM months.month)::int AS year,
+                       extract(month FROM months.month)::int AS month,
+                       count(f.id) AS flights,
+                       coalesce(sum(f.distance_km), 0) AS distance_km
+                FROM generate_series(
+                         (SELECT date_trunc('year', min(flight_date)) FROM flights),
+                         (SELECT date_trunc('year', max(flight_date)) + interval '11 months' FROM flights),
+                         interval '1 month'
+                     ) AS months(month)
+                LEFT JOIN flights f ON date_trunc('month', f.flight_date) = months.month
+                GROUP BY months.month
+                ORDER BY months.month
+                """)
+                .query(MonthCount.class)
                 .list();
     }
 }

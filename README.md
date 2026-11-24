@@ -144,7 +144,8 @@ The statistics page shows:
 - the number of flights and the total distance, also in miles and as trips around the
   equator
 - how many airports and how many countries and regions were visited
-- the flights per year, as a chart or as a table, including the years without a flight
+- the flights per year or per month, as a chart or as a table, including the years and
+  months without a flight; with flights in a single year the chart starts by month
 - the airlines, ranked by number of flights
 - the ten most visited airports, where take-offs and landings both count
 - the longest and the shortest flight, each with a link to the map

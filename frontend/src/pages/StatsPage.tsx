@@ -8,7 +8,7 @@ import { useAirlineName } from "@/features/flights/useAirlineName"
 import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { statsQuery } from "@/features/stats/api"
 import { ExtremeFlight } from "@/features/stats/ExtremeFlight"
-import { FlightsPerYearChart } from "@/features/stats/FlightsPerYearChart"
+import { FlightsOverTimeChart } from "@/features/stats/FlightsOverTimeChart"
 import { RankedBars } from "@/features/stats/RankedBars"
 import { StatTile } from "@/features/stats/StatTile"
 import { kmToMiles, timesAroundEarth } from "@/features/stats/units"
@@ -64,7 +64,7 @@ export function StatsPage() {
             <StatTile label={t("stats.countries")} value={format.number(stats.countries)} />
           </div>
 
-          <FlightsPerYearChart years={stats.flightsPerYear} />
+          <FlightsOverTimeChart years={stats.flightsPerYear} months={stats.flightsPerMonth} />
 
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>

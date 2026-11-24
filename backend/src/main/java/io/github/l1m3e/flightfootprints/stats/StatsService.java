@@ -34,6 +34,7 @@ public class StatsService {
                 stats.topAirports(),
                 flights.findLongest().orElse(null),
                 flights.findShortest().orElse(null),
-                stats.flightsPerYear());
+                stats.flightsPerYear(),
+                stats.flightsPerMonth());
     }
 }

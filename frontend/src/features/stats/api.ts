@@ -21,6 +21,14 @@ export interface YearCount {
   distanceKm: number
 }
 
+export interface MonthCount {
+  year: number
+  /** 1 for January to 12 for December. */
+  month: number
+  flights: number
+  distanceKm: number
+}
+
 /** Response of GET /api/stats. Every figure is computed by the database. */
 export interface Stats {
   flights: number
@@ -35,6 +43,8 @@ export interface Stats {
   shortestFlight: Flight | null
   /** One entry per year from the first flight to the last, including years without flights. */
   flightsPerYear: YearCount[]
+  /** One entry per month of those same years, January to December each. */
+  flightsPerMonth: MonthCount[]
 }
 
 export const statsQuery = queryOptions({

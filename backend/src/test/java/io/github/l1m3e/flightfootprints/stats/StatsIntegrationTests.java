@@ -44,7 +44,7 @@ class StatsIntegrationTests extends IntegrationTest {
                 .bodyJson().isStrictlyEqualTo("""
                         {"flights": 0, "totalDistanceKm": 0, "airports": 0, "countries": 0,
                          "airlines": [], "topAirports": [],
-                         "longestFlight": null, "shortestFlight": null, "flightsPerYear": []}
+                         "longestFlight": null, "shortestFlight": null, "flightsPerYear": [], "flightsPerMonth": []}
                         """);
     }
 
@@ -146,6 +146,55 @@ class StatsIntegrationTests extends IntegrationTest {
                         distances.tokyoLosAngeles() + distances.shanghaiNewYork()))
                 .extractingPath("$.flightsPerYear[*].year").asArray()
                 .containsExactly(2019, 2020, 2021);
+    }
+
+    @Test
+    void listsEveryMonthOfThoseYearsIncludingMonthsWithoutFlights() {
+        Distances distances = addFourFlights();
+
+        MvcTestResult result = mvc.get().uri("/api/stats").exchange();
+
+        // 2019, 2020 and 2021 in full: 36 months, January 2019 first and December 2021 last.
+        assertThat(result).hasStatusOk().bodyJson().extractingPath("$.flightsPerMonth").asArray().hasSize(36);
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[0]").asMap()
+                .containsEntry("year", 2019).containsEntry("month", 1).containsEntry("flights", 0);
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[35]").asMap()
+                .containsEntry("year", 2021).containsEntry("month", 12)
+                .containsEntry("flights", 1).containsEntry("distanceKm", distances.shanghaiNewYork());
+        // March 2019 has the two flights between Shanghai and Tokyo.
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[2]").asMap()
+                .containsEntry("year", 2019).containsEntry("month", 3)
+                .containsEntry("flights", 2).containsEntry("distanceKm", 2 * distances.shanghaiTokyo());
+        // Only three months have flights; they add up to all four.
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[?(@.flights > 0)].flights").asArray()
+                .containsExactly(2, 1, 1);
+        // The months come in order, without gaps: 2020 is there although nothing was flown.
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[?(@.year == 2020)].month").asArray()
+                .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    }
+
+    @Test
+    void aSingleFlightStillGivesAllTwelveMonthsOfItsYear() {
+        addFlight(signInAsAdmin(), "2022-05-05", "China Eastern Airlines", "PVG", "NRT");
+
+        MvcTestResult result = mvc.get().uri("/api/stats").exchange();
+
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[*].month").asArray()
+                .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        assertThat(result).bodyJson().extractingPath("$.flightsPerMonth[*].flights").asArray()
+                .containsExactly(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /** The last day of a month and the first day of the next must not end up in the same month. */
+    @Test
+    void aFlightOnTheLastDayOfAMonthCountsForThatMonth() {
+        MockHttpSession admin = signInAsAdmin();
+        addFlight(admin, "2022-01-31", "China Eastern Airlines", "PVG", "NRT");
+        addFlight(admin, "2022-02-01", "China Eastern Airlines", "NRT", "PVG");
+        addFlight(admin, "2022-12-31", "China Eastern Airlines", "PVG", "NRT");
+
+        assertThat(mvc.get().uri("/api/stats")).bodyJson().extractingPath("$.flightsPerMonth[*].flights").asArray()
+                .containsExactly(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
     }
 
     @Test

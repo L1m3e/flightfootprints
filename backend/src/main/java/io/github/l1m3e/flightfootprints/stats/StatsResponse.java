@@ -21,6 +21,8 @@ import io.github.l1m3e.flightfootprints.flight.FlightResponse;
  * @param longestFlight   {@code null} when there are no flights
  * @param shortestFlight  {@code null} when there are no flights
  * @param flightsPerYear  one entry per year from the first flight to the last, also for years without flights
+ * @param flightsPerMonth one entry per month of those same years, January to December each, also for months
+ *                        without flights
  */
 public record StatsResponse(
         long flights,
@@ -31,7 +33,8 @@ public record StatsResponse(
         List<AirportCount> topAirports,
         FlightResponse longestFlight,
         FlightResponse shortestFlight,
-        List<YearCount> flightsPerYear) {
+        List<YearCount> flightsPerYear,
+        List<MonthCount> flightsPerMonth) {
 
     public record AirlineCount(FlightAirline airline, long flights, long distanceKm) {
     }
@@ -43,5 +46,11 @@ public record StatsResponse(
     }
 
     public record YearCount(int year, long flights, long distanceKm) {
+    }
+
+    /**
+     * @param month 1 for January to 12 for December
+     */
+    public record MonthCount(int year, int month, long flights, long distanceKm) {
     }
 }
