@@ -21,7 +21,8 @@ import org.springframework.stereotype.Repository;
 public class FlightQueries {
 
     private static final String SELECT_FLIGHTS = """
-            SELECT f.id, f.flight_date, f.flight_no, f.airline, f.aircraft, f.seat, f.cabin, f.distance_km, f.notes,
+            SELECT f.id, f.flight_date, f.flight_no, f.airline_iata, f.airline_name, f.airline_name_zh,
+                   f.aircraft, f.seat, f.cabin, f.distance_km, f.notes,
                    o.iata AS from_iata, o.name AS from_name, o.city AS from_city,
                    o.country AS from_country, o.lat AS from_lat, o.lon AS from_lon,
                    d.iata AS to_iata, d.name AS to_name, d.city AS to_city,
@@ -71,7 +72,8 @@ public class FlightQueries {
                 row.getLong("id"),
                 row.getObject("flight_date", LocalDate.class),
                 row.getString("flight_no"),
-                row.getString("airline"),
+                new FlightAirline(row.getString("airline_iata"), row.getString("airline_name"),
+                        row.getString("airline_name_zh")),
                 airport(row, "from_"),
                 airport(row, "to_"),
                 row.getString("aircraft"),

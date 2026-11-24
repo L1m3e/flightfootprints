@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import type { Flight } from "@/features/flights/api"
+import { useAirlineName } from "@/features/flights/useAirlineName"
 import { useFormatters } from "@/lib/format"
 
 /**
@@ -21,6 +22,7 @@ export function FlightMapList({
 }) {
   const { t } = useTranslation()
   const format = useFormatters()
+  const airlineName = useAirlineName()
   const listRef = useRef<HTMLOListElement>(null)
 
   // A flight chosen on the map may be out of sight in a long list. Only the list itself is
@@ -75,7 +77,7 @@ export function FlightMapList({
                     selected ? "text-primary-foreground/80" : "text-muted-foreground",
                   )}
                 >
-                  {[flight.flightNo, flight.airline].filter(Boolean).join(" · ")}
+                  {[flight.flightNo, airlineName(flight.airline)].filter(Boolean).join(" · ")}
                 </span>
               </button>
             </li>

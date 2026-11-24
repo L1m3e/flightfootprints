@@ -8,6 +8,8 @@ import java.time.LocalDate;
 
 import io.github.l1m3e.flightfootprints.IntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
@@ -77,7 +79,7 @@ class FlightApiIntegrationTests extends IntegrationTest {
                   "id": %d,
                   "flightDate": "2024-05-01",
                   "flightNo": "MU587",
-                  "airline": "China Eastern",
+                  "airline": {"iata": "MU", "name": "China Eastern Airlines", "nameZh": "中国东方航空"},
                   "from": {"iata": "PVG", "city": "Shanghai (Pudong)", "country": "CN"},
                   "to": {"iata": "JFK", "city": "New York", "country": "US"},
                   "aircraft": "Boeing 777-300ER",
@@ -94,14 +96,78 @@ class FlightApiIntegrationTests extends IntegrationTest {
     @Test
     void inputIsTidiedBeforeItIsStored() {
         long id = create(signInAsAdmin(), """
-                {"flightDate": "2024-05-01", "flightNo": " mu 587 ", "airline": "  China Eastern ",
+                {"flightDate": "2024-05-01", "flightNo": " mu 587 ", "airline": "  Footprint Air ",
                  "fromIata": "pvg", "toIata": "jfk", "aircraft": "   ", "seat": "32a", "notes": ""}
                 """);
 
         assertThat(mvc.get().uri("/api/flights/" + id)).hasStatusOk().bodyJson().isLenientlyEqualTo("""
-                {"flightNo": "MU587", "airline": "China Eastern", "from": {"iata": "PVG"}, "to": {"iata": "JFK"},
-                 "aircraft": null, "seat": "32A", "cabin": null, "notes": null}
+                {"flightNo": "MU587", "airline": {"name": "Footprint Air"}, "from": {"iata": "PVG"},
+                 "to": {"iata": "JFK"}, "aircraft": null, "seat": "32A", "cabin": null, "notes": null}
                 """);
+    }
+
+    /** However the airline is written, the flight ends up with its code and both of its names. */
+    @ParameterizedTest(name = "\"{0}\" is {1}")
+    @CsvSource(delimiter = '|', textBlock = """
+            CX                      | CX | Cathay Pacific         | 国泰航空
+            cx                      | CX | Cathay Pacific         | 国泰航空
+            CPA                     | CX | Cathay Pacific         | 国泰航空
+            Cathay Pacific          | CX | Cathay Pacific         | 国泰航空
+            cathaypacific           | CX | Cathay Pacific         | 国泰航空
+            国泰航空                | CX | Cathay Pacific         | 国泰航空
+            Cathay                  | CX | Cathay Pacific         | 国泰航空
+            All Nippon Airways      | NH | All Nippon Airways     | 全日空
+            ANA                     | NH | All Nippon Airways     | 全日空
+            东航                    | MU | China Eastern Airlines | 中国东方航空
+            T'way Air               | TW | T'way Air              | 德威航空
+            tway air                | TW | T'way Air              | 德威航空
+            9C                      | 9C | Spring Airlines        | 春秋航空
+            """)
+    void aKnownAirlineIsStoredByItsCodeWithBothItsNames(String typed, String iata, String name, String nameZh) {
+        long id = create(signInAsAdmin(), flightWithAirline(typed));
+
+        assertThat(mvc.get().uri("/api/flights/" + id)).hasStatusOk()
+                .bodyJson().extractingPath("$.airline").asMap()
+                .containsEntry("iata", iata).containsEntry("name", name).containsEntry("nameZh", nameZh);
+        assertThat(jdbc.sql("SELECT airline_iata FROM flights WHERE id = :id").param("id", id)
+                .query(String.class).single()).isEqualTo(iata);
+    }
+
+    @Test
+    void anAirlineWithoutAChineseNameHasNone() {
+        long id = create(signInAsAdmin(), flightWithAirline("Air Premia"));
+
+        assertThat(mvc.get().uri("/api/flights/" + id)).hasStatusOk().bodyJson().isLenientlyEqualTo("""
+                {"airline": {"iata": "YP", "name": "Air Premia", "nameZh": null}}
+                """);
+    }
+
+    @Test
+    void anAirlineThatIsNotInTheListIsStoredAsTyped() {
+        long id = create(signInAsAdmin(), flightWithAirline("Footprint Air"));
+
+        assertThat(mvc.get().uri("/api/flights/" + id)).hasStatusOk().bodyJson().isLenientlyEqualTo("""
+                {"airline": {"iata": null, "name": "Footprint Air", "nameZh": null}}
+                """);
+    }
+
+    @Test
+    void changingTheAirlineReplacesTheCodeAndBothNames() {
+        MockHttpSession admin = signInAsAdmin();
+        long id = create(admin, flightWithAirline("国泰航空"));
+
+        assertThat(mvc.put().uri("/api/flights/" + id).session(admin).with(csrfToken())
+                .contentType(MediaType.APPLICATION_JSON).content(flightWithAirline("Footprint Air")))
+                .hasStatusOk()
+                .bodyJson().isLenientlyEqualTo("""
+                        {"airline": {"iata": null, "name": "Footprint Air", "nameZh": null}}
+                        """);
+        assertThat(mvc.put().uri("/api/flights/" + id).session(admin).with(csrfToken())
+                .contentType(MediaType.APPLICATION_JSON).content(flightWithAirline("NH")))
+                .hasStatusOk()
+                .bodyJson().isLenientlyEqualTo("""
+                        {"airline": {"iata": "NH", "name": "All Nippon Airways", "nameZh": "全日空"}}
+                        """);
     }
 
     @Test
@@ -225,9 +291,15 @@ class FlightApiIntegrationTests extends IntegrationTest {
         assertThat(countFlights()).isZero();
     }
 
+    private static String flightWithAirline(String airline) {
+        return """
+                {"flightDate": "2024-05-01", "airline": "%s", "fromIata": "PVG", "toIata": "JFK"}
+                """.formatted(airline);
+    }
+
     private static String flight(String date, String from, String to) {
         return """
-                {"flightDate": "%s", "flightNo": "MU587", "airline": "China Eastern",
+                {"flightDate": "%s", "flightNo": "MU587", "airline": "China Eastern Airlines",
                  "fromIata": "%s", "toIata": "%s", "aircraft": "Boeing 777-300ER",
                  "seat": "32A", "cabin": "ECONOMY", "notes": "First long-haul flight"}
                 """.formatted(date, from, to);

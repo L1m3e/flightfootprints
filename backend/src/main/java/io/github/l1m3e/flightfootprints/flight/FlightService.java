@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.l1m3e.flightfootprints.airline.Airline;
+import io.github.l1m3e.flightfootprints.airline.AirlineLookup;
 import io.github.l1m3e.flightfootprints.airport.Airport;
 import io.github.l1m3e.flightfootprints.airport.AirportRepository;
 import io.github.l1m3e.flightfootprints.web.FieldProblem;
@@ -21,12 +23,15 @@ public class FlightService {
     private final FlightRepository flights;
     private final FlightQueries queries;
     private final AirportRepository airports;
+    private final AirlineLookup airlines;
     private final Clock clock;
 
-    FlightService(FlightRepository flights, FlightQueries queries, AirportRepository airports, Clock clock) {
+    FlightService(FlightRepository flights, FlightQueries queries, AirportRepository airports,
+            AirlineLookup airlines, Clock clock) {
         this.flights = flights;
         this.queries = queries;
         this.airports = airports;
+        this.airlines = airlines;
         this.clock = clock;
     }
 
@@ -86,10 +91,18 @@ public class FlightService {
             throw new FieldValidationException(problems);
         }
 
+        // A known airline is stored by its code, with its two names taken from the airlines
+        // table whatever was typed. Any other airline keeps the name as typed.
+        Airline airline = airlines.find(request.airline()).orElse(null);
+        String airlineIata = airline == null ? null : airline.iata();
+        String airlineName = airline == null ? request.airline() : airline.name();
+        String airlineNameZh = airline == null ? null : airline.nameZh();
+
         int distanceKm = Math.toIntExact(Math.round(GreatCircle.distanceKm(from.lat(), from.lon(), to.lat(), to.lon())));
         // updatedAt (and createdAt for a new flight) are filled in by Spring Data's auditing.
-        return new Flight(id, request.flightDate(), request.flightNo(), request.airline(), from.iata(), to.iata(),
-                request.aircraft(), request.seat(), request.cabin(), distanceKm, request.notes(), createdAt, null);
+        return new Flight(id, request.flightDate(), request.flightNo(), airlineIata, airlineName, airlineNameZh,
+                from.iata(), to.iata(), request.aircraft(), request.seat(), request.cabin(), distanceKm,
+                request.notes(), createdAt, null);
     }
 
     private static ResponseStatusException notFound(long id) {

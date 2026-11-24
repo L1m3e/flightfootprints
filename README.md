@@ -150,8 +150,8 @@ The statistics page shows:
 - the longest and the shortest flight, each with a link to the map
 
 PostgreSQL does the counting, one query per figure, so the application never loads every
-flight just to add them up. Airline names are free text and are grouped without regard to
-upper and lower case.
+flight just to add them up. Flights are counted per airline code; an airline that is not
+in the list of known ones is counted by its name, without regard to upper and lower case.
 
 ## API
 
@@ -166,15 +166,19 @@ Every error is returned as an RFC 9457 problem document (`application/problem+js
 | `PUT`, `DELETE`     | `/api/flights/{id}`  | administrator   | Change or delete a flight                    |
 | `GET`               | `/api/stats`         | everyone        | Totals, rankings and flights per year        |
 | `GET`               | `/api/airports?q=`   | everyone        | Search airports by code, city or name        |
-| `GET`               | `/api/airlines`      | everyone        | Airlines a flight number can belong to       |
+| `GET`               | `/api/airlines`      | everyone        | The airlines the site knows, with both names |
 | `GET`               | `/api/auth/me`       | everyone        | Who is signed in                             |
 | `POST`              | `/api/auth/register` | visitors        | Create a regular account                     |
 | `POST`              | `/api/auth/login`    | visitors        | Sign in (form fields `username`, `password`) |
 | `POST`              | `/api/auth/logout`   | signed-in users | Sign out                                     |
 
-The start of a flight number names the airline (`CA` in `CA818`), so the flight form fills
-in the airline from it. The 110 airlines it knows are created by a Flyway migration; any
-other airline can still be typed in.
+A flight stores its airline as an IATA code together with the airline's name in English
+and in Chinese, and the page shows the name in the language it is set to. When a flight is
+saved, `airline` may be a code (`CX`) or a name in either language (`Cathay Pacific`,
+`国泰航空`); the backend finds the airline it means among the 110 that a Flyway migration
+creates. A name it does not know is stored as typed, so any other airline can still be
+entered. The start of a flight number names the airline (`CA` in `CA818`), so the flight
+form fills in the airline from it.
 
 The distance of a flight is never sent by the client: the backend computes the
 great-circle distance between the two airports with the haversine formula.

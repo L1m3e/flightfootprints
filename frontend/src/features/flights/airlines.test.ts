@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { airlineDesignator, airlineName, airlineOfFlightNo } from "@/features/flights/airlines"
+import { airlineDesignator, airlineName, airlineOfFlightNo, findAirline } from "@/features/flights/airlines"
 import type { Airline } from "@/features/flights/api"
 
 const AIR_CHINA: Airline = { iata: "CA", icao: "CCA", name: "Air China", nameZh: "中国国际航空", aliases: ["国航"] }
@@ -60,5 +60,60 @@ describe("airlineName", () => {
 
   it("falls back to English where there is no Chinese name", () => {
     expect(airlineName(AIR_PREMIA, "zh")).toBe("Air Premia")
+  })
+})
+
+describe("findAirline", () => {
+  it.each([
+    ["Air China", AIR_CHINA],
+    ["air china", AIR_CHINA],
+    ["AirChina", AIR_CHINA],
+    ["  air   china ", AIR_CHINA],
+    ["中国国际航空", AIR_CHINA],
+    ["国航", AIR_CHINA],
+    ["CA", AIR_CHINA],
+    ["ca", AIR_CHINA],
+    ["CCA", AIR_CHINA],
+    ["China Airlines", CHINA_AIRLINES],
+    ["9C", SPRING],
+    ["Air Premia", AIR_PREMIA],
+  ])("understands %j", (text, expected) => {
+    expect(findAirline(airlines, text)).toBe(expected)
+  })
+
+  it.each(["Footprint Air", "Air", "China", "", "   ", null, undefined])("finds no airline in %j", (text) => {
+    expect(findAirline(airlines, text)).toBeUndefined()
+  })
+
+  it("ignores punctuation in a name", () => {
+    const tway: Airline = { iata: "TW", icao: "TWB", name: "T'way Air", nameZh: "德威航空", aliases: [] }
+
+    expect(findAirline([tway], "tway air")).toBe(tway)
+    expect(findAirline([tway], "T-way Air")).toBe(tway)
+  })
+
+  it("finds neither of two airlines by a name they share", () => {
+    const first: Airline = { iata: "AA", icao: "AAA", name: "First Air", nameZh: null, aliases: ["Shared"] }
+    const second: Airline = { iata: "BB", icao: "BBB", name: "Second Air", nameZh: null, aliases: ["shared"] }
+
+    expect(findAirline([first, second], "Shared")).toBeUndefined()
+    expect(findAirline([first, second], "Second Air")).toBe(second)
+  })
+})
+
+describe("airlineName for the airline of a flight", () => {
+  it("shows a known airline in the language of the page", () => {
+    const cathay = { iata: "CX", name: "Cathay Pacific", nameZh: "国泰航空" }
+
+    expect(airlineName(cathay, "en")).toBe("Cathay Pacific")
+    expect(airlineName(cathay, "zh")).toBe("国泰航空")
+    expect(airlineName(cathay, "zh-CN")).toBe("国泰航空")
+  })
+
+  it("shows an airline that is not in the list as it was typed, in every language", () => {
+    const typed = { iata: null, name: "Footprint Air", nameZh: null }
+
+    expect(airlineName(typed, "en")).toBe("Footprint Air")
+    expect(airlineName(typed, "zh")).toBe("Footprint Air")
   })
 })

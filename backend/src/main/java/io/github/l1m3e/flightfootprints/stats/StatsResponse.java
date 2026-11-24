@@ -3,6 +3,7 @@ package io.github.l1m3e.flightfootprints.stats;
 import java.util.List;
 
 import io.github.l1m3e.flightfootprints.airport.Airport;
+import io.github.l1m3e.flightfootprints.flight.FlightAirline;
 import io.github.l1m3e.flightfootprints.flight.FlightResponse;
 
 /**
@@ -32,7 +33,7 @@ public record StatsResponse(
         FlightResponse shortestFlight,
         List<YearCount> flightsPerYear) {
 
-    public record AirlineCount(String airline, long flights, long distanceKm) {
+    public record AirlineCount(FlightAirline airline, long flights, long distanceKm) {
     }
 
     /**

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAirlineName } from "@/features/flights/useAirlineName"
 import { statsQuery } from "@/features/stats/api"
 import { ExtremeFlight } from "@/features/stats/ExtremeFlight"
 import { FlightsPerYearChart } from "@/features/stats/FlightsPerYearChart"
@@ -15,6 +16,7 @@ import { useFormatters } from "@/lib/format"
 export function StatsPage() {
   const { t } = useTranslation()
   const format = useFormatters()
+  const airlineName = useAirlineName()
   const { data: stats, isPending, isError, refetch } = useQuery(statsQuery)
 
   return (
@@ -73,8 +75,9 @@ export function StatsPage() {
               <CardContent>
                 <RankedBars
                   rows={stats.airlines.map((entry) => ({
-                    key: entry.airline,
-                    label: entry.airline,
+                    // Two airlines never share a code, and those without one differ by name.
+                    key: entry.airline.iata ?? `name:${entry.airline.name.toLowerCase()}`,
+                    label: airlineName(entry.airline),
                     value: entry.flights,
                     figure: `${t("flights.count", { count: entry.flights })} · ${t("flights.distance", {
                       distance: format.number(entry.distanceKm),

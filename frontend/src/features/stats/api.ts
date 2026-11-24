@@ -1,10 +1,10 @@
 import { queryOptions } from "@tanstack/react-query"
 
-import type { Airport, Flight } from "@/features/flights/api"
+import type { Airport, Flight, FlightAirline } from "@/features/flights/api"
 import { api } from "@/lib/api"
 
 export interface AirlineCount {
-  airline: string
+  airline: FlightAirline
   flights: number
   distanceKm: number
 }

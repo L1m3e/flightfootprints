@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { AIRCRAFT_TYPES } from "@/features/aircraft/aircraftTypes"
-import { airlineName, airlineOfFlightNo } from "@/features/flights/airlines"
+import { airlineDesignator, airlineName, airlineOfFlightNo, findAirline } from "@/features/flights/airlines"
 import { AirportCombobox } from "@/features/flights/AirportCombobox"
 import { airlinesQuery, CABINS, type Airline, type Airport, type Flight, type FlightInput } from "@/features/flights/api"
 import { ApiError, type FieldProblem } from "@/lib/api"
@@ -69,11 +69,12 @@ type FormValues = z.input<Schema>
 /** What comes out once every check has passed: both airports are known to be chosen. */
 type ValidValues = z.output<Schema>
 
-function toFormValues(flight: Flight | undefined): FormValues {
+function toFormValues(flight: Flight | undefined, language: string): FormValues {
   return {
     flightDate: flight?.flightDate ?? "",
     flightNo: flight?.flightNo ?? "",
-    airline: flight?.airline ?? "",
+    // The field holds a name, in the language of the page. What is sent is decided on saving.
+    airline: flight ? airlineName(flight.airline, language) : "",
     from: flight?.from ?? null,
     to: flight?.to ?? null,
     aircraft: flight?.aircraft ?? "",
@@ -88,11 +89,13 @@ function emptyToNull(value: string): string | null {
   return trimmed === "" ? null : trimmed
 }
 
-function toInput(values: ValidValues): FlightInput {
+function toInput(values: ValidValues, airlines: readonly Airline[]): FlightInput {
   return {
     flightDate: values.flightDate,
     flightNo: emptyToNull(normalizeFlightNo(values.flightNo)),
-    airline: values.airline.trim(),
+    // A known airline is sent as its code, any other as the name that was typed. Should
+    // the list of airlines not have arrived yet, the name is sent and the backend looks it up.
+    airline: findAirline(airlines, values.airline)?.iata ?? values.airline.trim(),
     fromIata: values.from.iata,
     toIata: values.to.iata,
     aircraft: emptyToNull(values.aircraft),
@@ -149,18 +152,27 @@ export function FlightForm({
   const schema = useMemo(() => createSchema(t, latestDate), [t, latestDate])
 
   // Three type arguments: the field values, an unused context, and the validated result.
+  // Read once: the form takes its starting values when it is created.
+  const [initialValues] = useState(() => toFormValues(flight, i18n.language))
   const form = useForm<FormValues, unknown, ValidValues>({
     resolver: zodResolver(schema),
-    defaultValues: toFormValues(flight),
+    defaultValues: initialValues,
   })
   const { errors, isSubmitting } = form.formState
 
   // The start of a flight number names the airline ("CA" in CA818), so the airline field
   // can be filled in from it. What was filled in is remembered: the form may replace its
-  // own suggestion when the flight number changes, but never something the user typed.
+  // own suggestion when the flight number or the language changes, but never something
+  // the user typed. A flight that is being edited starts out as "filled in" only if its
+  // airline is the one its flight number names; otherwise the airline was typed on
+  // purpose (a flight operated by another airline) and must stay.
   const { data: airlines = NO_AIRLINES } = useQuery(airlinesQuery)
   const flightNo = useWatch({ control: form.control, name: "flightNo" })
-  const filledIn = useRef<string | null>(null)
+  const filledIn = useRef<string | null>(
+    flight?.airline.iata != null && flight.airline.iata === airlineDesignator(flight.flightNo)
+      ? initialValues.airline
+      : null,
+  )
   useEffect(() => {
     const airline = airlineOfFlightNo(airlines, flightNo)
     if (!airline) return
@@ -174,9 +186,22 @@ export function FlightForm({
     form.setValue("airline", name, { shouldDirty: true, shouldValidate: true })
   }, [airlines, flightNo, form, i18n.language])
 
+  // Says what the typed airline was understood as, before anything is saved.
+  const typedAirline = useWatch({ control: form.control, name: "airline" })
+  const knownAirline = findAirline(airlines, typedAirline)
+  let airlineHint = t("flights.airlineHint")
+  if (knownAirline) {
+    airlineHint = t("flights.airlineKnown", {
+      code: knownAirline.iata,
+      name: [knownAirline.name, knownAirline.nameZh].filter(Boolean).join(" · "),
+    })
+  } else if (typedAirline.trim() !== "" && airlines.length > 0) {
+    airlineHint = t("flights.airlineUnknown")
+  }
+
   async function submit(values: ValidValues) {
     try {
-      await onSubmit(toInput(values))
+      await onSubmit(toInput(values, airlines))
     } catch (error) {
       const problems = error instanceof ApiError ? error.fieldProblems : []
       let shownAtField = false
@@ -231,7 +256,8 @@ export function FlightForm({
 
         <Field data-invalid={!!errors.airline}>
           <FieldLabel htmlFor="airline">{t("flights.airline")}</FieldLabel>
-          {/* Any name is accepted: the list only offers the airlines the site knows. */}
+          {/* Any name is accepted. The list offers the airlines the site knows, and the
+              line under the field says whether what was typed is one of them. */}
           <Input
             id="airline"
             list="airline-names"
@@ -248,7 +274,7 @@ export function FlightForm({
               </option>
             ))}
           </datalist>
-          <FieldDescription id="airline-hint">{t("flights.airlineHint")}</FieldDescription>
+          <FieldDescription id="airline-hint">{airlineHint}</FieldDescription>
           <FieldError errors={[errors.airline]} />
         </Field>
 

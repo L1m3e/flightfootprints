@@ -12,7 +12,7 @@ public record FlightResponse(
         long id,
         LocalDate flightDate,
         String flightNo,
-        String airline,
+        FlightAirline airline,
         Airport from,
         Airport to,
         String aircraft,

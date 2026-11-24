@@ -11,6 +11,10 @@ import jakarta.validation.constraints.Size;
 /**
  * What the form sends to create or change a flight. The distance is not part of it:
  * the backend always computes that from the two airports.
+ *
+ * @param airline the airline's IATA code ("CX") or its name in any language ("Cathay
+ *                Pacific", "国泰航空"). The backend finds the airline it means and stores
+ *                its code and both names; a name it does not know is stored as typed.
  */
 public record FlightRequest(
         @NotNull LocalDate flightDate,

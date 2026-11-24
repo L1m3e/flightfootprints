@@ -12,7 +12,7 @@ function flight(flightDate: string, distanceKm: number): Flight {
     id: nextId++,
     flightDate,
     flightNo: null,
-    airline: "Test Air",
+    airline: { iata: null, name: "Test Air", nameZh: null },
     from: PVG,
     to: NRT,
     aircraft: null,

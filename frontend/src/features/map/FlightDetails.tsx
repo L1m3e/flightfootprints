@@ -6,6 +6,7 @@ import { Link } from "react-router"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { useSession } from "@/features/auth/api"
 import type { Airport, Flight } from "@/features/flights/api"
+import { useAirlineName } from "@/features/flights/useAirlineName"
 import { useFormatters } from "@/lib/format"
 
 /** Everything known about the flight that is selected on the map. */
@@ -20,6 +21,7 @@ export function FlightDetails({
 }) {
   const { t } = useTranslation()
   const format = useFormatters()
+  const airlineName = useAirlineName()
   const { isAdmin } = useSession()
 
   const extras = [flight.aircraft, flight.cabin && t(`flights.cabins.${flight.cabin}`), flight.seat].filter(Boolean)
@@ -44,7 +46,7 @@ export function FlightDetails({
 
       <p className="mt-1 text-sm font-medium">
         {flight.flightNo && <span className="font-mono">{flight.flightNo} · </span>}
-        {flight.airline}
+        {airlineName(flight.airline)}
       </p>
 
       <dl className="mt-3 space-y-2 text-sm">

@@ -6,6 +6,7 @@ import { Link } from "react-router"
 import { buttonVariants } from "@/components/ui/button"
 import type { Airport, Flight } from "@/features/flights/api"
 import { DeleteFlightButton } from "@/features/flights/DeleteFlightButton"
+import { useAirlineName } from "@/features/flights/useAirlineName"
 import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
 import { useFormatters } from "@/lib/format"
 
@@ -16,6 +17,7 @@ import { useFormatters } from "@/lib/format"
 export function FlightCard({ flight, canEdit }: { flight: Flight; canEdit: boolean }) {
   const { t } = useTranslation()
   const format = useFormatters()
+  const airlineName = useAirlineName()
 
   const details = [flight.aircraft, flight.cabin && t(`flights.cabins.${flight.cabin}`), flight.seat].filter(Boolean)
 
@@ -28,7 +30,7 @@ export function FlightCard({ flight, canEdit }: { flight: Flight; canEdit: boole
           </time>
           <p className="text-muted-foreground">
             {flight.flightNo && <span className="font-mono">{flight.flightNo} · </span>}
-            {flight.airline}
+            {airlineName(flight.airline)}
           </p>
         </header>
 

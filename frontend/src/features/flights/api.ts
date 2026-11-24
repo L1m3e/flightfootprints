@@ -16,13 +16,22 @@ export interface Airport {
   lon: number
 }
 
+/** The airline of a flight: its code and its name in both languages. */
+export interface FlightAirline {
+  /** IATA code, or null for an airline that is not in the list of known ones. */
+  iata: string | null
+  /** Name in English. For an airline that is not in the list: the name as it was typed. */
+  name: string
+  nameZh: string | null
+}
+
 /** A flight as the API returns it, with both airports included. */
 export interface Flight {
   id: number
   /** "YYYY-MM-DD" */
   flightDate: string
   flightNo: string | null
-  airline: string
+  airline: FlightAirline
   from: Airport
   to: Airport
   aircraft: string | null
@@ -37,6 +46,7 @@ export interface Flight {
 export interface FlightInput {
   flightDate: string
   flightNo: string | null
+  /** The IATA code of a known airline ("CX"), or the name of any other airline as typed. */
   airline: string
   fromIata: string
   toIata: string

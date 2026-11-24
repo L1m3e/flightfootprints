@@ -46,7 +46,7 @@ function flight(from: Airport, to: Airport, flightDate = "2024-01-01"): Flight {
     id: nextId++,
     flightDate,
     flightNo: null,
-    airline: "Test Air",
+    airline: { iata: null, name: "Test Air", nameZh: null },
     from,
     to,
     aircraft: null,

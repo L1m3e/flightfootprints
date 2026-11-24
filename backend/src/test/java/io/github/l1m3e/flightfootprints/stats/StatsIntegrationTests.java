@@ -19,7 +19,7 @@ class StatsIntegrationTests extends IntegrationTest {
     /**
      * Four flights over three years with a gap in 2020:
      * Shanghai to Tokyo and back in 2019, Tokyo to Los Angeles and Shanghai to New York in 2021.
-     * The return flight spells the airline in lower case on purpose.
+     * The airline of three of them is written in three different ways on purpose.
      */
     private record Distances(int shanghaiTokyo, int tokyoLosAngeles, int shanghaiNewYork) {
 
@@ -30,10 +30,10 @@ class StatsIntegrationTests extends IntegrationTest {
 
     private Distances addFourFlights() {
         MockHttpSession admin = signInAsAdmin();
-        int shanghaiTokyo = addFlight(admin, "2019-03-01", "China Eastern", "PVG", "NRT");
-        addFlight(admin, "2019-03-08", "china eastern", "NRT", "PVG");
+        int shanghaiTokyo = addFlight(admin, "2019-03-01", "China Eastern Airlines", "PVG", "NRT");
+        addFlight(admin, "2019-03-08", "东航", "NRT", "PVG");
         int tokyoLosAngeles = addFlight(admin, "2021-07-01", "All Nippon Airways", "NRT", "LAX");
-        int shanghaiNewYork = addFlight(admin, "2021-12-24", "China Eastern", "PVG", "JFK");
+        int shanghaiNewYork = addFlight(admin, "2021-12-24", "MU", "PVG", "JFK");
         return new Distances(shanghaiTokyo, tokyoLosAngeles, shanghaiNewYork);
     }
 
@@ -62,22 +62,43 @@ class StatsIntegrationTests extends IntegrationTest {
     }
 
     @Test
-    void ranksAirlinesByFlightsAndTreatsSpellingsThatDifferOnlyInCaseAsOne() {
+    void ranksAirlinesByFlightsHoweverTheAirlineWasWritten() {
         Distances distances = addFourFlights();
 
         assertThat(mvc.get().uri("/api/stats"))
                 .hasStatusOk()
-                // Three flights were entered as "China Eastern" twice and "china eastern" once.
-                // They count as one airline, shown with the spelling that was used most.
+                // "China Eastern Airlines", "东航" and "MU" are one airline, with both its names.
                 .bodyJson().isLenientlyEqualTo("""
                         {"airlines": [
-                           {"airline": "China Eastern", "flights": 3, "distanceKm": %d},
-                           {"airline": "All Nippon Airways", "flights": 1, "distanceKm": %d}
+                           {"airline": {"iata": "MU", "name": "China Eastern Airlines", "nameZh": "中国东方航空"},
+                            "flights": 3, "distanceKm": %d},
+                           {"airline": {"iata": "NH", "name": "All Nippon Airways", "nameZh": "全日空"},
+                            "flights": 1, "distanceKm": %d}
                         ]}
                         """.formatted(2 * distances.shanghaiTokyo() + distances.shanghaiNewYork(),
                         distances.tokyoLosAngeles()))
-                .extractingPath("$.airlines[*].airline").asArray()
-                .containsExactly("China Eastern", "All Nippon Airways");
+                .extractingPath("$.airlines[*].airline.iata").asArray()
+                .containsExactly("MU", "NH");
+    }
+
+    @Test
+    void countsAnAirlineThatIsNotInTheListByItsNameWithoutRegardToCase() {
+        MockHttpSession admin = signInAsAdmin();
+        addFlight(admin, "2022-01-01", "Footprint Air", "PVG", "NRT");
+        addFlight(admin, "2022-01-02", "footprint air", "NRT", "PVG");
+        addFlight(admin, "2022-01-03", "Footprint Air", "PVG", "NRT");
+        addFlight(admin, "2022-01-04", "Other Air", "NRT", "PVG");
+
+        assertThat(mvc.get().uri("/api/stats"))
+                .hasStatusOk()
+                // One airline with three flights, shown with the spelling that was used most.
+                .bodyJson().isLenientlyEqualTo("""
+                        {"airlines": [
+                           {"airline": {"iata": null, "name": "Footprint Air", "nameZh": null}, "flights": 3},
+                           {"airline": {"iata": null, "name": "Other Air", "nameZh": null}, "flights": 1}
+                        ]}
+                        """)
+                .extractingPath("$.airlines").asArray().hasSize(2);
     }
 
     @Test
@@ -129,7 +150,7 @@ class StatsIntegrationTests extends IntegrationTest {
 
     @Test
     void aSingleFlightIsBothTheLongestAndTheShortest() {
-        int distance = addFlight(signInAsAdmin(), "2022-05-05", "China Eastern", "PVG", "NRT");
+        int distance = addFlight(signInAsAdmin(), "2022-05-05", "China Eastern Airlines", "PVG", "NRT");
 
         assertThat(mvc.get().uri("/api/stats"))
                 .hasStatusOk()

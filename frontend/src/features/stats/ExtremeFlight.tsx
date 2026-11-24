@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import type { Flight } from "@/features/flights/api"
+import { useAirlineName } from "@/features/flights/useAirlineName"
 import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
 import { kmToMiles } from "@/features/stats/units"
 import { useFormatters } from "@/lib/format"
@@ -9,6 +10,7 @@ import { useFormatters } from "@/lib/format"
 export function ExtremeFlight({ title, flight }: { title: string; flight: Flight }) {
   const { t } = useTranslation()
   const format = useFormatters()
+  const airlineName = useAirlineName()
 
   return (
     <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
@@ -31,7 +33,7 @@ export function ExtremeFlight({ title, flight }: { title: string; flight: Flight
       <p className="mt-1 text-sm text-muted-foreground">
         <time dateTime={flight.flightDate}>{format.date(flight.flightDate)}</time>
         {" · "}
-        {[flight.flightNo, flight.airline].filter(Boolean).join(" · ")}
+        {[flight.flightNo, airlineName(flight.airline)].filter(Boolean).join(" · ")}
       </p>
 
       <div className="mt-3">

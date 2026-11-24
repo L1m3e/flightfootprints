@@ -3,6 +3,7 @@ package io.github.l1m3e.flightfootprints.stats;
 import java.util.List;
 
 import io.github.l1m3e.flightfootprints.airport.Airport;
+import io.github.l1m3e.flightfootprints.flight.FlightAirline;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.AirlineCount;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.AirportCount;
 import io.github.l1m3e.flightfootprints.stats.StatsResponse.YearCount;
@@ -58,17 +59,24 @@ class StatsQueries {
     }
 
     List<AirlineCount> airlines() {
-        // The airline is free text, so "China Eastern" and "china eastern" are grouped
-        // together. mode() picks the spelling that was used most often for the group.
+        // Flights of a known airline are counted by its code. An airline that is not in the
+        // airlines table is only a name that somebody typed, so "Footprint Air" and
+        // "footprint air" are counted together, and mode() picks the spelling that was
+        // used most often.
         return jdbcClient.sql("""
-                SELECT mode() WITHIN GROUP (ORDER BY airline) AS airline,
+                SELECT airline_iata AS iata,
+                       mode() WITHIN GROUP (ORDER BY airline_name) AS name,
+                       max(airline_name_zh) AS name_zh,
                        count(*) AS flights,
                        sum(distance_km) AS distance_km
                 FROM flights
-                GROUP BY lower(airline)
-                ORDER BY flights DESC, distance_km DESC, airline
+                GROUP BY airline_iata, CASE WHEN airline_iata IS NULL THEN lower(airline_name) END
+                ORDER BY flights DESC, distance_km DESC, name
                 """)
-                .query(AirlineCount.class)
+                .query((row, rowNumber) -> new AirlineCount(
+                        new FlightAirline(row.getString("iata"), row.getString("name"), row.getString("name_zh")),
+                        row.getLong("flights"),
+                        row.getLong("distance_km")))
                 .list();
     }
 
