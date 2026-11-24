@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAirlineName } from "@/features/flights/useAirlineName"
+import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { statsQuery } from "@/features/stats/api"
 import { ExtremeFlight } from "@/features/stats/ExtremeFlight"
 import { FlightsPerYearChart } from "@/features/stats/FlightsPerYearChart"
@@ -17,6 +18,7 @@ export function StatsPage() {
   const { t } = useTranslation()
   const format = useFormatters()
   const airlineName = useAirlineName()
+  const places = usePlaceNames()
   const { data: stats, isPending, isError, refetch } = useQuery(statsQuery)
 
   return (
@@ -102,7 +104,7 @@ export function StatsPage() {
                       <>
                         <span className="font-mono">{airport.iata}</span>
                         <span className="ml-2 font-normal text-muted-foreground">
-                          {[airport.city ?? airport.name, format.country(airport.country)].join(", ")}
+                          {places.place(airport, airport.name)}
                         </span>
                       </>
                     ),

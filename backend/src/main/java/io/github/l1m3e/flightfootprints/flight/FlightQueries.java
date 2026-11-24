@@ -23,9 +23,9 @@ public class FlightQueries {
     private static final String SELECT_FLIGHTS = """
             SELECT f.id, f.flight_date, f.flight_no, f.airline_iata, f.airline_name, f.airline_name_zh,
                    f.aircraft, f.seat, f.cabin, f.distance_km, f.notes,
-                   o.iata AS from_iata, o.name AS from_name, o.city AS from_city,
+                   o.iata AS from_iata, o.name AS from_name, o.city AS from_city, o.city_zh AS from_city_zh,
                    o.country AS from_country, o.lat AS from_lat, o.lon AS from_lon,
-                   d.iata AS to_iata, d.name AS to_name, d.city AS to_city,
+                   d.iata AS to_iata, d.name AS to_name, d.city AS to_city, d.city_zh AS to_city_zh,
                    d.country AS to_country, d.lat AS to_lat, d.lon AS to_lon
             FROM flights f
             JOIN airports o ON o.iata = f.from_iata
@@ -88,6 +88,7 @@ public class FlightQueries {
                 row.getString(prefix + "iata"),
                 row.getString(prefix + "name"),
                 row.getString(prefix + "city"),
+                row.getString(prefix + "city_zh"),
                 row.getString(prefix + "country"),
                 row.getDouble(prefix + "lat"),
                 row.getDouble(prefix + "lon"));

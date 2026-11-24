@@ -212,6 +212,14 @@ node scripts/update-airports.mjs
 The backend reads the CSV only while its `airports` table is empty, so an existing
 database keeps the airports it already has.
 
+OurAirports has no Chinese names. The city names that the Chinese pages show come from a
+second file, `backend/src/main/resources/data/airport-cities-zh.csv`, with one line per
+airport: every airport in mainland China, Hong Kong, Macau and Taiwan, and the large
+airports elsewhere. Unlike the airports themselves, these names are written to the
+database on every start, so a line added to the file shows up after the next deployment.
+An airport that is not in the file is shown with its English city name. Where city and
+country or region are the same name, as with Hong Kong and Singapore, it is shown once.
+
 ## Roadmap
 
 - [x] Project skeleton: monorepo, Flyway migrations, airport import, health check

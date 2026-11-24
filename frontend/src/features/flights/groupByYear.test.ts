@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest"
 import type { Airport, Flight } from "@/features/flights/api"
 import { groupByYear } from "@/features/flights/groupByYear"
 
-const PVG: Airport = { iata: "PVG", name: "Shanghai Pudong", city: "Shanghai", country: "CN", lat: 31.14, lon: 121.8 }
-const NRT: Airport = { iata: "NRT", name: "Narita", city: "Narita", country: "JP", lat: 35.77, lon: 140.39 }
+const PVG: Airport = { iata: "PVG", name: "Shanghai Pudong", city: "Shanghai", cityZh: "上海", country: "CN", lat: 31.14, lon: 121.8 }
+const NRT: Airport = { iata: "NRT", name: "Narita", city: "Narita", cityZh: "东京", country: "JP", lat: 35.77, lon: 140.39 }
 
 let nextId = 1
 function flight(flightDate: string, distanceKm: number): Flight {

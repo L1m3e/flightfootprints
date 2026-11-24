@@ -83,7 +83,7 @@ class StatsQueries {
     List<AirportCount> topAirports() {
         // UNION ALL keeps duplicates: here every take-off and every landing counts.
         return jdbcClient.sql("""
-                SELECT a.iata, a.name, a.city, a.country, a.lat, a.lon, visits.flights
+                SELECT a.iata, a.name, a.city, a.city_zh, a.country, a.lat, a.lon, visits.flights
                 FROM (
                     SELECT iata, count(*) AS flights
                     FROM (
@@ -100,7 +100,8 @@ class StatsQueries {
                 .param("limit", TOP_AIRPORTS)
                 .query((row, rowNumber) -> new AirportCount(
                         new Airport(row.getString("iata"), row.getString("name"), row.getString("city"),
-                                row.getString("country"), row.getDouble("lat"), row.getDouble("lon")),
+                                row.getString("city_zh"), row.getString("country"), row.getDouble("lat"),
+                                row.getDouble("lon")),
                         row.getLong("flights")))
                 .list();
     }

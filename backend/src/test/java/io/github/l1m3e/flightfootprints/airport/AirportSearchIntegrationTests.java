@@ -26,6 +26,34 @@ class AirportSearchIntegrationTests extends IntegrationTest {
     }
 
     @Test
+    void aCityNameInChineseFindsItsAirportsToo() {
+        assertThat(mvc.get().uri("/api/airports").param("q", "上海"))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$[*].iata").asArray()
+                .containsExactlyInAnyOrder("PVG", "SHA");
+        assertThat(mvc.get().uri("/api/airports").param("q", "香港"))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$[*].iata").asArray()
+                .containsExactly("HKG");
+    }
+
+    @Test
+    void anAirportComesWithItsCityInBothLanguagesWhereTheChineseNameIsKnown() {
+        assertThat(mvc.get().uri("/api/airports").param("q", "PVG"))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$[0]").asMap()
+                .containsEntry("city", "Shanghai (Pudong)")
+                .containsEntry("cityZh", "上海");
+        // An atoll in French Polynesia, which has no Chinese name in the list.
+        assertThat(mvc.get().uri("/api/airports").param("q", "AAA"))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$[0]").asMap()
+                .containsEntry("iata", "AAA")
+                .containsEntry("city", "Anaa")
+                .containsEntry("cityZh", null);
+    }
+
+    @Test
     void partOfAnAirportNameIsEnough() {
         assertThat(mvc.get().uri("/api/airports").param("q", "heathrow"))
                 .hasStatusOk()

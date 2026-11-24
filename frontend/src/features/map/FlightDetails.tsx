@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { useSession } from "@/features/auth/api"
 import type { Airport, Flight } from "@/features/flights/api"
 import { useAirlineName } from "@/features/flights/useAirlineName"
+import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { useFormatters } from "@/lib/format"
 
 /** Everything known about the flight that is selected on the map. */
@@ -72,14 +73,14 @@ export function FlightDetails({
 }
 
 function Place({ label, airport }: { label: string; airport: Airport }) {
-  const format = useFormatters()
+  const places = usePlaceNames()
   return (
     <div>
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>
         {airport.name}
         <span className="block text-xs text-muted-foreground">
-          {[airport.city, format.country(airport.country)].filter(Boolean).join(", ")}
+          {places.place(airport)}
         </span>
       </dd>
     </div>

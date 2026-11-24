@@ -5,15 +5,15 @@ import type { Airport, Flight } from "@/features/flights/api"
 import { boundsOf, buildAirportPoints, buildFlightArcs, greatCircleArc, routeCoordinates } from "@/features/map/geo"
 
 const AIRPORTS = {
-  PVG: { iata: "PVG", name: "Shanghai Pudong", city: "Shanghai", country: "CN", lat: 31.1434, lon: 121.805 },
-  NRT: { iata: "NRT", name: "Narita", city: "Narita", country: "JP", lat: 35.76858, lon: 140.388714 },
-  LAX: { iata: "LAX", name: "Los Angeles", city: "Los Angeles", country: "US", lat: 33.942501, lon: -118.407997 },
-  JFK: { iata: "JFK", name: "John F. Kennedy", city: "New York", country: "US", lat: 40.639447, lon: -73.779317 },
-  HKG: { iata: "HKG", name: "Hong Kong", city: "Hong Kong", country: "HK", lat: 22.308901, lon: 113.914603 },
-  WUH: { iata: "WUH", name: "Wuhan Tianhe", city: "Wuhan", country: "CN", lat: 30.774798, lon: 114.213723 },
-  LHR: { iata: "LHR", name: "Heathrow", city: "London", country: "GB", lat: 51.470748, lon: -0.459909 },
-  SYD: { iata: "SYD", name: "Kingsford Smith", city: "Sydney", country: "AU", lat: -33.946098, lon: 151.177002 },
-  SCL: { iata: "SCL", name: "Arturo Merino Benítez", city: "Santiago", country: "CL", lat: -33.393, lon: -70.7858 },
+  PVG: { iata: "PVG", name: "Shanghai Pudong", city: "Shanghai", cityZh: null, country: "CN", lat: 31.1434, lon: 121.805 },
+  NRT: { iata: "NRT", name: "Narita", city: "Narita", cityZh: null, country: "JP", lat: 35.76858, lon: 140.388714 },
+  LAX: { iata: "LAX", name: "Los Angeles", city: "Los Angeles", cityZh: null, country: "US", lat: 33.942501, lon: -118.407997 },
+  JFK: { iata: "JFK", name: "John F. Kennedy", city: "New York", cityZh: null, country: "US", lat: 40.639447, lon: -73.779317 },
+  HKG: { iata: "HKG", name: "Hong Kong", city: "Hong Kong", cityZh: null, country: "HK", lat: 22.308901, lon: 113.914603 },
+  WUH: { iata: "WUH", name: "Wuhan Tianhe", city: "Wuhan", cityZh: null, country: "CN", lat: 30.774798, lon: 114.213723 },
+  LHR: { iata: "LHR", name: "Heathrow", city: "London", cityZh: null, country: "GB", lat: 51.470748, lon: -0.459909 },
+  SYD: { iata: "SYD", name: "Kingsford Smith", city: "Sydney", cityZh: null, country: "AU", lat: -33.946098, lon: 151.177002 },
+  SCL: { iata: "SCL", name: "Arturo Merino Benítez", city: "Santiago", cityZh: null, country: "CL", lat: -33.393, lon: -70.7858 },
 } satisfies Record<string, Airport>
 
 const position = (airport: Airport): Position => [airport.lon, airport.lat]

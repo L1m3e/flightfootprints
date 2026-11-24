@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button"
 import type { Airport, Flight } from "@/features/flights/api"
 import { DeleteFlightButton } from "@/features/flights/DeleteFlightButton"
 import { useAirlineName } from "@/features/flights/useAirlineName"
+import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
 import { useFormatters } from "@/lib/format"
 
@@ -75,8 +76,7 @@ export function FlightCard({ flight, canEdit }: { flight: Flight; canEdit: boole
 }
 
 function RouteEnd({ airport, alignEnd = false }: { airport: Airport; alignEnd?: boolean }) {
-  const format = useFormatters()
-  const place = [airport.city ?? airport.name, format.country(airport.country)].join(", ")
+  const places = usePlaceNames()
 
   return (
     <div className={cn("min-w-0", alignEnd && "text-right")}>
@@ -84,7 +84,7 @@ function RouteEnd({ airport, alignEnd = false }: { airport: Airport; alignEnd?: 
       {/* The full airport name is long, so it is a tooltip; the card shows city and country.
           On a narrow screen the text wraps instead of being cut off. */}
       <p className="text-sm text-balance text-muted-foreground" title={airport.name}>
-        {place}
+        {places.place(airport, airport.name)}
       </p>
     </div>
   )

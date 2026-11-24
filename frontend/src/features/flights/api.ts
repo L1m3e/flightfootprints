@@ -10,6 +10,8 @@ export interface Airport {
   iata: string
   name: string
   city: string | null
+  /** The city in Chinese, where a Chinese name is known. */
+  cityZh: string | null
   /** ISO 3166-1 alpha-2 code, e.g. "CN". */
   country: string
   lat: number

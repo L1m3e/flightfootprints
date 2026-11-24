@@ -11,13 +11,8 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox"
 import { airportSearchQuery, type Airport } from "@/features/flights/api"
-import { useFormatters } from "@/lib/format"
+import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
-
-/** What the input shows once an airport is chosen: "PVG · Shanghai (Pudong)". */
-function airportLabel(airport: Airport): string {
-  return `${airport.iata} · ${airport.city ?? airport.name}`
-}
 
 /**
  * Text box that searches airports on the server while the visitor types an IATA code,
@@ -37,8 +32,11 @@ export function AirportCombobox({
   invalid?: boolean
 }) {
   const { t } = useTranslation()
-  const format = useFormatters()
+  const places = usePlaceNames()
   const [typed, setTyped] = useState("")
+
+  /** What the input shows once an airport is chosen: "PVG · Shanghai (Pudong)" or "PVG · 上海". */
+  const airportLabel = (airport: Airport) => `${airport.iata} · ${places.city(airport) ?? airport.name}`
 
   // The input also holds the label of the chosen airport. That text is not a search.
   const search = value !== null && typed === airportLabel(value) ? "" : typed.trim()
@@ -101,7 +99,7 @@ export function AirportCombobox({
               <span className="min-w-0">
                 <span className="block truncate">{airport.name}</span>
                 <span className="block truncate text-xs text-muted-foreground">
-                  {[airport.city, format.country(airport.country)].filter(Boolean).join(", ")}
+                  {places.place(airport)}
                 </span>
               </span>
             </ComboboxItem>

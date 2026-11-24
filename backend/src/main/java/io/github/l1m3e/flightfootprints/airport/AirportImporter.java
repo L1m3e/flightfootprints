@@ -27,6 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Loads the bundled airport list into the database on startup, but only while the
  * {@code airports} table is still empty. Every later startup finds the rows and does
  * nothing, so restarting the application never touches existing data.
+ *
+ * <p>Afterwards the Chinese city names are brought up to date; see {@link ChineseCityNames}.
  */
 @Component
 public class AirportImporter implements ApplicationRunner {
@@ -46,19 +48,23 @@ public class AirportImporter implements ApplicationRunner {
     private final AirportRepository airports;
     private final JdbcTemplate jdbcTemplate;
     private final TransactionTemplate transactionTemplate;
+    private final ChineseCityNames chineseCityNames;
     private final Resource csv;
 
     AirportImporter(AirportRepository airports, JdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate,
-            @Value("classpath:data/airports.csv") Resource csv) {
+            ChineseCityNames chineseCityNames, @Value("classpath:data/airports.csv") Resource csv) {
         this.airports = airports;
         this.jdbcTemplate = jdbcTemplate;
         this.transactionTemplate = transactionTemplate;
+        this.chineseCityNames = chineseCityNames;
         this.csv = csv;
     }
 
+    /** In this order: the names can only be written to airports that exist. */
     @Override
     public void run(ApplicationArguments args) {
         importIfEmpty();
+        chineseCityNames.apply();
     }
 
     /**
@@ -94,6 +100,8 @@ public class AirportImporter implements ApplicationRunner {
                         line.get("iata"),
                         line.get("name"),
                         blankToNull(line.get("city")),
+                        // Not in this file; ChineseCityNames adds it afterwards.
+                        null,
                         line.get("country"),
                         Double.parseDouble(line.get("lat")),
                         Double.parseDouble(line.get("lon"))));

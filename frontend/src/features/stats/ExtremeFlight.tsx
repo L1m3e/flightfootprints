@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next"
 
 import type { Flight } from "@/features/flights/api"
 import { useAirlineName } from "@/features/flights/useAirlineName"
+import { usePlaceNames } from "@/features/flights/usePlaceNames"
 import { ViewOnMapLink } from "@/features/flights/ViewOnMapLink"
 import { kmToMiles } from "@/features/stats/units"
 import { useFormatters } from "@/lib/format"
@@ -11,6 +12,7 @@ export function ExtremeFlight({ title, flight }: { title: string; flight: Flight
   const { t } = useTranslation()
   const format = useFormatters()
   const airlineName = useAirlineName()
+  const places = usePlaceNames()
 
   return (
     <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
@@ -28,7 +30,7 @@ export function ExtremeFlight({ title, flight }: { title: string; flight: Flight
         <span className="sr-only">{t("flights.to")}</span> {flight.to.iata}
       </p>
       <p className="text-sm text-muted-foreground">
-        {[flight.from.city ?? flight.from.name, flight.to.city ?? flight.to.name].join(" → ")}
+        {[flight.from, flight.to].map((airport) => places.city(airport) ?? airport.name).join(" → ")}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">
         <time dateTime={flight.flightDate}>{format.date(flight.flightDate)}</time>
