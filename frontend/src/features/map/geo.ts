@@ -1,70 +1,52 @@
 import { greatCircle } from "@turf/great-circle"
-import type { Feature, FeatureCollection, LineString, MultiLineString, Point, Position } from "geojson"
+import type { Feature, FeatureCollection, LineString, Point, Position } from "geojson"
 
 import type { Airport, Flight } from "@/features/flights/api"
 
 /**
- * One line for most routes. A route across the 180° meridian is two lines, one on each
- * side of the map, that meet exactly on the meridian.
+ * Points per route. Enough for a smooth curve at any zoom a world map is looked at, also
+ * near the poles, where the map stretches every step of the line.
  */
-export type ArcGeometry = LineString | MultiLineString
-
-/** Points per arc. Enough for a smooth curve at any zoom a world map is looked at. */
-const ARC_POINTS = 96
-
-const toRadians = (degrees: number) => (degrees * Math.PI) / 180
-const toDegrees = (radians: number) => (radians * 180) / Math.PI
+const ARC_POINTS = 128
 
 /**
- * The shortest path over the Earth's surface between two [longitude, latitude] points.
+ * The shortest path over the Earth's surface between two [longitude, latitude] points,
+ * as one unbroken line.
+ *
+ * The line starts at `from` exactly as given. From there every point lies less than 180°
+ * of longitude from the one before it, so a route across the 180° meridian keeps counting:
+ * Hong Kong (114°) to New York (-74°) over the Arctic ends at 286°, which is the same
+ * place as -74°. MapLibre accepts such longitudes and draws the line in one piece.
+ *
+ * The library that computes the path cannot be used as it is. Its longitudes stay between
+ * -180 and 180, so somewhere a route like that jumps from one edge of the map to the
+ * other. It cuts the line in two at the jump, but not near a pole, where the longitude
+ * changes quickly from one point to the next: there it returns a single line with the jump
+ * still in it, and the map connects the two points with a stroke across the whole world.
  */
-export function greatCircleArc(from: Position, to: Position): ArcGeometry {
+export function routeCoordinates(from: Position, to: Position): Position[] {
   const geometry = greatCircle(from, to, { npoints: ARC_POINTS }).geometry
-  return geometry.type === "MultiLineString" ? closeMeridianGap(geometry) : geometry
+  const pieces = geometry.type === "MultiLineString" ? geometry.coordinates : [geometry.coordinates]
+
+  const route: Position[] = []
+  for (const [longitude, latitude] of pieces.flat()) {
+    const previous = route.at(-1)
+    let lon = longitude
+    if (previous) {
+      while (lon - previous[0] > 180) lon -= 360
+      while (lon - previous[0] < -180) lon += 360
+      // Where the library cut the line, both pieces have a point on the meridian. They
+      // are the same place.
+      if (lon === previous[0] && latitude === previous[1]) continue
+    }
+    route.push([lon, latitude])
+  }
+  return route
 }
 
-/**
- * turf splits a route that crosses the 180° meridian into two lines, but neither of them
- * reaches the meridian: the piece between the last point before it and the first point
- * after it is simply missing, which shows as a hole in the drawn route. This adds the
- * crossing point to both lines so they meet.
- */
-function closeMeridianGap(geometry: MultiLineString): MultiLineString {
-  const parts = geometry.coordinates.map((part) => [...part])
-
-  for (let i = 0; i < parts.length - 1; i++) {
-    const before = parts[i][parts[i].length - 1]
-    const after = parts[i + 1][0]
-
-    // The first line stops just short of +180 (heading east) or -180 (heading west).
-    const edge = before[0] >= 0 ? 180 : -180
-    // Express `after` on the same side as `before`: -178 becomes 182 when heading east.
-    const afterSameSide: Position = [after[0] + 2 * edge, after[1]]
-    const latitude = latitudeOnGreatCircle(before, afterSameSide, edge)
-
-    if (before[0] !== edge) parts[i].push([edge, latitude])
-    if (after[0] !== -edge) parts[i + 1].unshift([-edge, latitude])
-  }
-  return { type: "MultiLineString", coordinates: parts }
-}
-
-/**
- * Latitude at which the great circle through `a` and `b` crosses the given longitude.
- * Formula from Ed Williams' Aviation Formulary ("Latitude of point on GC").
- */
-function latitudeOnGreatCircle(a: Position, b: Position, longitude: number): number {
-  const [lon1, lat1] = a.map(toRadians)
-  const [lon2, lat2] = b.map(toRadians)
-  const lon = toRadians(longitude)
-
-  const denominator = Math.cos(lat1) * Math.cos(lat2) * Math.sin(lon1 - lon2)
-  if (Math.abs(denominator) < 1e-12) {
-    // Both points on one meridian: the path runs straight along it.
-    return (a[1] + b[1]) / 2
-  }
-  const numerator =
-    Math.sin(lat1) * Math.cos(lat2) * Math.sin(lon - lon2) - Math.sin(lat2) * Math.cos(lat1) * Math.sin(lon - lon1)
-  return toDegrees(Math.atan(numerator / denominator))
+/** The route between two points as a GeoJSON line. See {@link routeCoordinates}. */
+export function greatCircleArc(from: Position, to: Position): LineString {
+  return { type: "LineString", coordinates: routeCoordinates(from, to) }
 }
 
 export interface FlightArcProperties {
@@ -79,7 +61,7 @@ export interface FlightArcProperties {
 }
 
 /** One arc per flight. */
-export function buildFlightArcs(flights: Flight[]): FeatureCollection<ArcGeometry, FlightArcProperties> {
+export function buildFlightArcs(flights: Flight[]): FeatureCollection<LineString, FlightArcProperties> {
   // "NRT-PVG" for both PVG to NRT and NRT to PVG: direction does not matter here.
   const byAirportPair = new Map<string, Flight[]>()
   for (const flight of flights) {
@@ -89,7 +71,7 @@ export function buildFlightArcs(flights: Flight[]): FeatureCollection<ArcGeometr
     else byAirportPair.set(key, [flight])
   }
 
-  const features: Feature<ArcGeometry, FlightArcProperties>[] = []
+  const features: Feature<LineString, FlightArcProperties>[] = []
   for (const group of byAirportPair.values()) {
     // Every line of a pair is drawn in the same direction, whichever way the flight went.
     // "Shift to the left of the line" then means the same side for all of them.
@@ -140,34 +122,51 @@ export function buildAirportPoints(flights: Flight[]): FeatureCollection<Point, 
 /** West, south, east, north. East may exceed 180 when the box spans the 180° meridian. */
 export type Bounds = [west: number, south: number, east: number, north: number]
 
-function coordinatesOf(geometry: ArcGeometry): Position[] {
-  return geometry.type === "LineString" ? geometry.coordinates : geometry.coordinates.flat()
+/** Brings a longitude into the range from -180 (included) to 180 (not included). */
+function wrapLongitude(longitude: number): number {
+  return ((((longitude + 180) % 360) + 360) % 360) - 180
 }
 
 /**
- * The smallest box that contains all the given arcs, or null when there are none.
+ * The smallest box that contains all the given routes, or null when there are none.
  *
  * Longitude wraps around, so "smallest" needs care: flights between Asia and America
  * are best framed across the Pacific (east edge beyond 180), not across the Atlantic.
- * The longitudes are sorted around the globe, the widest empty stretch between two
- * neighbours is found, and the box covers everything except that stretch.
+ * Every route covers one stretch of longitudes, from its westernmost point to its
+ * easternmost. Going once around the globe, the widest stretch that no route covers is
+ * found, and the box is everything except that stretch.
  */
-export function boundsOf(geometries: ArcGeometry[]): Bounds | null {
-  const points = geometries.flatMap(coordinatesOf)
+export function boundsOf(routes: LineString[]): Bounds | null {
+  const points = routes.flatMap((route) => route.coordinates)
   if (points.length === 0) return null
 
-  const longitudes = [...new Set(points.map(([lon]) => (lon === 180 ? -180 : lon)))].sort((a, b) => a - b)
-  let west = longitudes[0]
-  let widestGap = longitudes[0] + 360 - longitudes[longitudes.length - 1]
-  for (let i = 1; i < longitudes.length; i++) {
-    const gap = longitudes[i] - longitudes[i - 1]
-    if (gap > widestGap) {
-      widestGap = gap
-      west = longitudes[i]
+  const stretches = routes
+    .filter((route) => route.coordinates.length > 0)
+    .map((route) => {
+      // The longitudes of one route are continuous (see routeCoordinates), so its lowest
+      // and highest are its two ends on the map, also when the route crosses 180°.
+      const longitudes = route.coordinates.map(([lon]) => lon)
+      const west = Math.min(...longitudes)
+      const start = wrapLongitude(west)
+      return { start, end: start + Math.min(Math.max(...longitudes) - west, 360) }
+    })
+    .sort((a, b) => a.start - b.start)
+
+  // Going around a second time. On the first lap a stretch that runs past 180° has not
+  // been seen yet when the list starts, although it covers the beginning of it; on the
+  // second lap everything that covers a longitude is already known.
+  let west = -180
+  let widestGap = 0
+  let coveredUntil = Math.max(...stretches.map((stretch) => stretch.end))
+  for (const stretch of stretches) {
+    const start = stretch.start + 360
+    if (start - coveredUntil > widestGap) {
+      widestGap = start - coveredUntil
+      west = stretch.start
     }
+    coveredUntil = Math.max(coveredUntil, stretch.end + 360)
   }
-  const east = west + (360 - widestGap)
 
   const latitudes = points.map(([, lat]) => lat)
-  return [west, Math.min(...latitudes), east, Math.max(...latitudes)]
+  return [west, Math.min(...latitudes), west + (360 - widestGap), Math.max(...latitudes)]
 }
