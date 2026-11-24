@@ -7,7 +7,7 @@ import type { ExpressionSpecification, LngLatBoundsLike } from "maplibre-gl"
 // address the file really ends up at, in development and in a build; the map gets it
 // through its workerUrl prop. Without it nothing that comes from a data source is drawn.
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"
-import { useImperativeHandle, useMemo, useRef, useState, type Ref } from "react"
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react"
 import { useTranslation } from "react-i18next"
 import {
   GlobeControl,
@@ -22,6 +22,7 @@ import {
 
 import type { Flight } from "@/features/flights/api"
 import { boundsOf, buildAirportPoints, buildFlightArcs, type Bounds } from "@/features/map/geo"
+import { MapLoading } from "@/features/map/MapLoading"
 import { BASEMAP_STYLE_URL, EMPTY_STYLE, LABEL_FONT, MAP_COLORS } from "@/features/map/mapStyle"
 
 const ARC_LAYER = "flight-arcs"
@@ -45,6 +46,13 @@ const CLICK_REACH = [2, 5, 9]
  * 81° still shows the top of a polar route such as Shanghai to New York (79.5° north).
  */
 const MAX_FRAMED_LATITUDE = 81
+
+/**
+ * How long the loading screen may cover the map. MapLibre reports "loaded" only when
+ * every tile in view has arrived, and one request that hangs on a bad connection would
+ * otherwise hide a map that is all but complete.
+ */
+const LONGEST_LOADING_MS = 12_000
 
 function toMapBounds([west, south, east, north]: Bounds): LngLatBoundsLike {
   return [
@@ -77,6 +85,18 @@ export function FlightMap({
   const basemapLoaded = useRef(false)
   const [basemapFailed, setBasemapFailed] = useState(false)
   const [cursor, setCursor] = useState("")
+
+  // The map is ready once it has drawn itself completely for the first time. Until then
+  // a loading screen lies over it. A change of language creates a new map (see the key
+  // below), which has to load again, so what is remembered is the language it loaded in.
+  const language = i18n.resolvedLanguage
+  const [loadedInLanguage, setLoadedInLanguage] = useState<string | null>(null)
+  const ready = loadedInLanguage === (language ?? "")
+  useEffect(() => {
+    if (ready) return
+    const timer = setTimeout(() => setLoadedInLanguage(language ?? ""), LONGEST_LOADING_MS)
+    return () => clearTimeout(timer)
+  }, [ready, language])
 
   const arcs = useMemo(() => buildFlightArcs(flights), [flights])
   const airports = useMemo(() => buildAirportPoints(flights), [flights])
@@ -144,121 +164,127 @@ export function FlightMap({
   const touchScreen = useMemo(() => window.matchMedia("(pointer: coarse)").matches, [])
 
   return (
-    <Map
-      // The texts above are only read when the map is created, so a change of language
-      // creates a new map.
-      key={i18n.resolvedLanguage}
-      ref={mapRef}
-      initialViewState={initialViewState}
-      mapStyle={basemapFailed ? EMPTY_STYLE : BASEMAP_STYLE_URL}
-      workerUrl={maplibreWorkerUrl}
-      locale={locale}
-      cooperativeGestures={touchScreen}
-      // Tilting and rotating add nothing to a route map and are easy to trigger by accident.
-      dragRotate={false}
-      pitchWithRotate={false}
-      touchPitch={false}
-      interactiveLayerIds={[POINTER_AREA_LAYER]}
-      cursor={cursor}
-      onMouseEnter={() => setCursor("pointer")}
-      onMouseLeave={() => setCursor("")}
-      onClick={handleClick}
-      onStyleData={() => {
-        basemapLoaded.current = true
-      }}
-      onError={() => {
-        // Errors after the style has arrived are about single tiles; the map copes with
-        // those. An error before that means the basemap itself is unreachable.
-        if (!basemapLoaded.current && !basemapFailed) {
-          setBasemapFailed(true)
-          onBasemapUnavailable?.()
-        }
-      }}
-    >
-      <NavigationControl position="top-right" showCompass={false} />
-      <GlobeControl position="top-right" />
+    <div className="relative size-full" aria-busy={!ready}>
+      <Map
+        // The texts above are only read when the map is created, so a change of language
+        // creates a new map.
+        key={language}
+        ref={mapRef}
+        initialViewState={initialViewState}
+        mapStyle={basemapFailed ? EMPTY_STYLE : BASEMAP_STYLE_URL}
+        workerUrl={maplibreWorkerUrl}
+        locale={locale}
+        cooperativeGestures={touchScreen}
+        // Tilting and rotating add nothing to a route map and are easy to trigger by accident.
+        dragRotate={false}
+        pitchWithRotate={false}
+        touchPitch={false}
+        interactiveLayerIds={[POINTER_AREA_LAYER]}
+        cursor={cursor}
+        onMouseEnter={() => setCursor("pointer")}
+        onMouseLeave={() => setCursor("")}
+        onClick={handleClick}
+        onStyleData={() => {
+          basemapLoaded.current = true
+        }}
+        // Fired once, after the style, the routes and the tiles in view have been drawn.
+        onLoad={() => setLoadedInLanguage(language ?? "")}
+        onError={() => {
+          // Errors after the style has arrived are about single tiles; the map copes with
+          // those. An error before that means the basemap itself is unreachable.
+          if (!basemapLoaded.current && !basemapFailed) {
+            setBasemapFailed(true)
+            onBasemapUnavailable?.()
+          }
+        }}
+      >
+        <NavigationControl position="top-right" showCompass={false} />
+        <GlobeControl position="top-right" />
 
-      <Source id="flights" type="geojson" data={arcs}>
-        <Layer
-          id={ARC_LAYER}
-          type="line"
-          layout={{ "line-cap": "round", "line-join": "round" }}
-          paint={{
-            "line-color": MAP_COLORS.arc,
-            "line-width": 1.6,
-            "line-opacity": 0.8,
-            "line-offset": laneOffset,
-          }}
-        />
-        <Layer
-          id="flight-arc-selected"
-          type="line"
-          filter={["==", ["get", "flightId"], selectedFlightId ?? -1]}
-          layout={{ "line-cap": "round", "line-join": "round" }}
-          paint={{
-            "line-color": MAP_COLORS.arcSelected,
-            "line-width": 3.5,
-            "line-offset": laneOffset,
-          }}
-        />
-        {/* Invisible and wide: only there so the pointer turns into a hand near a line. */}
-        <Layer
-          id={POINTER_AREA_LAYER}
-          type="line"
-          paint={{ "line-color": "#000000", "line-opacity": 0, "line-width": 12, "line-offset": laneOffset }}
-        />
-      </Source>
-
-      <Source id="airports" type="geojson" data={airports}>
-        <Layer
-          id="airport-dots"
-          type="circle"
-          paint={{
-            // A little larger for airports with more flights, from 3.5 px up to 7 px.
-            "circle-radius": ["interpolate", ["linear"], ["get", "flights"], 1, 3.5, 10, 7],
-            "circle-color": MAP_COLORS.airportFill,
-            "circle-stroke-color": MAP_COLORS.airportStroke,
-            "circle-stroke-width": 1.5,
-          }}
-        />
-        {/* Text drawn by the map needs the basemap's font server. On the plain background
-            the labels are ordinary HTML instead (see the markers below). */}
-        {!basemapFailed && (
+        <Source id="flights" type="geojson" data={arcs}>
           <Layer
-            id="airport-labels"
-            type="symbol"
-            layout={{
-              "text-field": ["get", "iata"],
-              "text-font": LABEL_FONT,
-              "text-size": 11,
-              "text-anchor": "top",
-              "text-offset": [0, 0.7],
-            }}
+            id={ARC_LAYER}
+            type="line"
+            layout={{ "line-cap": "round", "line-join": "round" }}
             paint={{
-              "text-color": MAP_COLORS.label,
-              "text-halo-color": MAP_COLORS.labelHalo,
-              "text-halo-width": 1.5,
+              "line-color": MAP_COLORS.arc,
+              "line-width": 1.6,
+              "line-opacity": 0.8,
+              "line-offset": laneOffset,
             }}
           />
-        )}
-      </Source>
+          <Layer
+            id="flight-arc-selected"
+            type="line"
+            filter={["==", ["get", "flightId"], selectedFlightId ?? -1]}
+            layout={{ "line-cap": "round", "line-join": "round" }}
+            paint={{
+              "line-color": MAP_COLORS.arcSelected,
+              "line-width": 3.5,
+              "line-offset": laneOffset,
+            }}
+          />
+          {/* Invisible and wide: only there so the pointer turns into a hand near a line. */}
+          <Layer
+            id={POINTER_AREA_LAYER}
+            type="line"
+            paint={{ "line-color": "#000000", "line-opacity": 0, "line-width": 12, "line-offset": laneOffset }}
+          />
+        </Source>
 
-      {basemapFailed &&
-        airports.features.map(({ geometry, properties }) => (
-          <Marker
-            key={properties.iata}
-            longitude={geometry.coordinates[0]}
-            latitude={geometry.coordinates[1]}
-            anchor="top"
-            offset={[0, 5]}
-            // The label must not swallow clicks meant for the map underneath it.
-            style={{ pointerEvents: "none" }}
-          >
-            <span className="font-sans text-[11px] font-bold text-primary [text-shadow:0_0_2px_white,0_0_2px_white,0_0_2px_white]">
-              {properties.iata}
-            </span>
-          </Marker>
-        ))}
-    </Map>
+        <Source id="airports" type="geojson" data={airports}>
+          <Layer
+            id="airport-dots"
+            type="circle"
+            paint={{
+              // A little larger for airports with more flights, from 3.5 px up to 7 px.
+              "circle-radius": ["interpolate", ["linear"], ["get", "flights"], 1, 3.5, 10, 7],
+              "circle-color": MAP_COLORS.airportFill,
+              "circle-stroke-color": MAP_COLORS.airportStroke,
+              "circle-stroke-width": 1.5,
+            }}
+          />
+          {/* Text drawn by the map needs the basemap's font server. On the plain background
+              the labels are ordinary HTML instead (see the markers below). */}
+          {!basemapFailed && (
+            <Layer
+              id="airport-labels"
+              type="symbol"
+              layout={{
+                "text-field": ["get", "iata"],
+                "text-font": LABEL_FONT,
+                "text-size": 11,
+                "text-anchor": "top",
+                "text-offset": [0, 0.7],
+              }}
+              paint={{
+                "text-color": MAP_COLORS.label,
+                "text-halo-color": MAP_COLORS.labelHalo,
+                "text-halo-width": 1.5,
+              }}
+            />
+          )}
+        </Source>
+
+        {basemapFailed &&
+          airports.features.map(({ geometry, properties }) => (
+            <Marker
+              key={properties.iata}
+              longitude={geometry.coordinates[0]}
+              latitude={geometry.coordinates[1]}
+              anchor="top"
+              offset={[0, 5]}
+              // The label must not swallow clicks meant for the map underneath it.
+              style={{ pointerEvents: "none" }}
+            >
+              <span className="font-sans text-[11px] font-bold text-primary [text-shadow:0_0_2px_white,0_0_2px_white,0_0_2px_white]">
+                {properties.iata}
+              </span>
+            </Marker>
+          ))}
+      </Map>
+      {/* Above the map's own buttons, which do nothing useful before there is a map. */}
+      <MapLoading done={ready} className="absolute inset-0 z-10" />
+    </div>
   )
 }

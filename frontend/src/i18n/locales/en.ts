@@ -21,6 +21,7 @@ const en = {
   map: {
     title: "Route map",
     empty: "No flights to show yet.",
+    loading: "Loading the map…",
     basemapUnavailable: "The background map could not be loaded. The routes are shown without it.",
     flightsHeading: "Flights",
     selectHint: "Choose a flight on the map or in the list to see its details.",

@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router"
 
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 import { flightsQuery } from "@/features/flights/api"
 import { FlightDetails } from "@/features/map/FlightDetails"
 import { FlightMap, type FlightMapHandle } from "@/features/map/FlightMap"
 import { FlightMapList } from "@/features/map/FlightMapList"
+import { MapLoading } from "@/features/map/MapLoading"
 
 export function MapPage() {
   const { t } = useTranslation()
@@ -43,7 +43,8 @@ export function MapPage() {
           {/* The map fills its parent, so the parent decides the size. */}
           <div className="h-[60svh] min-h-80 overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10 lg:h-[70svh]">
             {isPending ? (
-              <Skeleton className="size-full rounded-none" />
+              // The same screen the map shows while it loads itself, so the two waits look like one.
+              <MapLoading />
             ) : isError ? (
               <div className="flex size-full flex-col items-center justify-center gap-3 text-center">
                 <p className="text-sm text-muted-foreground">{t("errors.loadFailed")}</p>

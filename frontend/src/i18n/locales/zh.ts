@@ -24,6 +24,7 @@ const zh: typeof en = {
   map: {
     title: "航线地图",
     empty: "还没有可以显示的航班。",
+    loading: "地图加载中…",
     basemapUnavailable: "底图加载失败，航线仍然照常显示。",
     flightsHeading: "航班",
     selectHint: "在地图上或列表里选一趟航班，查看它的详情。",
