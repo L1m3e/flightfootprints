@@ -3,6 +3,10 @@ package io.github.l1m3e.flightfootprints;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.github.l1m3e.flightfootprints.airport.Airport;
 import io.github.l1m3e.flightfootprints.airport.AirportImporter;
 import io.github.l1m3e.flightfootprints.airport.AirportRepository;
@@ -46,15 +50,19 @@ class FlightFootprintsApplicationTests extends IntegrationTest {
         assertThat(airports.count()).isEqualTo(before);
     }
 
+    /** The version is the one line of the VERSION file in the repository root, which the build puts into the jar. */
     @Test
-    void healthReportsTheAirportCount() {
+    void healthReportsTheVersionAndTheAirportCount() throws IOException {
+        String version = Files.readString(Path.of("..", "VERSION")).strip();
+        assertThat(version).matches("\\d+\\.\\d+\\.\\d+");
+
         assertThat(mvc.get().uri("/api/health"))
                 .hasStatusOk()
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson()
                 .isStrictlyEqualTo("""
-                        {"status": "UP", "airports": %d}
-                        """.formatted(airports.count()));
+                        {"status": "UP", "version": "%s", "airports": %d}
+                        """.formatted(version, airports.count()));
     }
 
     @Test

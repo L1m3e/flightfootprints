@@ -1,10 +1,20 @@
+import { readFileSync } from "node:fs"
+
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
+// The version of the whole site is one line in the VERSION file in the repository root.
+// The backend reads the same file (backend/build.gradle.kts), so the two cannot disagree.
+const version = readFileSync(new URL("../VERSION", import.meta.url), "utf8").trim()
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    // Replaced by the text of the version wherever the code says __APP_VERSION__.
+    __APP_VERSION__: JSON.stringify(version),
+  },
   resolve: {
     // Take the "@/..." import alias from tsconfig, so it is declared in one place only.
     tsconfigPaths: true,

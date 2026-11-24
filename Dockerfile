@@ -12,6 +12,8 @@ WORKDIR /build/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+# The version shown in the corner of every page; vite.config.ts reads it from one level up.
+COPY VERSION /build/VERSION
 RUN npm run build
 
 # ---- 2. The backend: one jar, with the frontend inside it.
@@ -23,6 +25,9 @@ COPY backend/settings.gradle.kts backend/build.gradle.kts ./
 # Downloads Gradle and the libraries. Reused until the build files change.
 RUN ./gradlew --no-daemon dependencies > /dev/null
 COPY backend/src ./src
+# build.gradle.kts reads the version from ../VERSION. It is copied only now, after the
+# libraries were downloaded, so a new version does not download them all again.
+COPY VERSION /build/VERSION
 # build.gradle.kts picks the frontend up from ../frontend/dist.
 COPY --from=frontend /build/frontend/dist /build/frontend/dist
 # The tests are not run here: they need a database in Docker, and CI runs them.

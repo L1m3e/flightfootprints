@@ -82,6 +82,8 @@ const en = {
   footer: {
     tagline: "A personal flight log.",
     airportData: "Airport data from <source>OurAirports</source>, public domain.",
+    version: "Version",
+    changelog: "What changed in each version",
   },
   auth: {
     signIn: "Sign in",

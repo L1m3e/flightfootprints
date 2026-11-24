@@ -85,6 +85,8 @@ const zh: typeof en = {
   footer: {
     tagline: "个人飞行记录。",
     airportData: "机场数据来自 <source>OurAirports</source>（公有领域）。",
+    version: "版本",
+    changelog: "查看每个版本的更新内容",
   },
   auth: {
     signIn: "登录",

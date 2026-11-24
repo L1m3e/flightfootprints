@@ -32,6 +32,8 @@ scripts/       Maintenance scripts
 Dockerfile     Builds frontend and backend into one image
 compose.yaml   PostgreSQL for local development
 .env.example   Template for the settings described under "Configuration"
+VERSION        The version number of the site, one line
+CHANGELOG.md   What changed in each version
 ```
 
 ## Running locally
@@ -160,7 +162,7 @@ Every error is returned as an RFC 9457 problem document (`application/problem+js
 
 | Method              | Path                 | Who             | Purpose                                      |
 | ------------------- | -------------------- | --------------- | -------------------------------------------- |
-| `GET`               | `/api/health`        | everyone        | Status and number of airports                |
+| `GET`               | `/api/health`        | everyone        | Status, version and number of airports       |
 | `GET`               | `/api/flights`       | everyone        | All flights, newest first                    |
 | `GET`               | `/api/flights/{id}`  | everyone        | One flight                                   |
 | `POST`              | `/api/flights`       | administrator   | Add a flight                                 |
@@ -220,6 +222,17 @@ airports elsewhere. Unlike the airports themselves, these names are written to t
 database on every start, so a line added to the file shows up after the next deployment.
 An airport that is not in the file is shown with its English city name. Where city and
 country or region are the same name, as with Hong Kong and Singapore, it is shown once.
+
+## Versions
+
+The site has one version number, kept in the [`VERSION`](VERSION) file. Both builds read
+it from there: the frontend shows it in the bottom corner of every page, and the backend
+reports it in `GET /api/health`, which is the quickest way to see whether a deployment has
+arrived. [CHANGELOG.md](CHANGELOG.md) lists what each version changed and explains when
+which part of the number goes up.
+
+To release a version: change the number in `VERSION`, describe the changes at the top of
+`CHANGELOG.md`, commit both, and tag the commit (`git tag v0.2.0`).
 
 ## Roadmap
 

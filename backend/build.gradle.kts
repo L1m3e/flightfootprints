@@ -7,7 +7,11 @@ plugins {
 }
 
 group = "io.github.l1m3e"
-version = "0.0.1-SNAPSHOT"
+// The version of the whole site is one line in the VERSION file in the repository root;
+// the frontend reads the same file (frontend/vite.config.ts). "dev" is only seen where
+// the file is not there yet: the step of the Docker build that downloads the libraries,
+// which must not start over each time the version changes.
+version = rootDir.resolve("../VERSION").takeIf { it.isFile }?.readText()?.trim() ?: "dev"
 
 java {
     toolchain {
@@ -17,6 +21,15 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+springBoot {
+    // Writes the version into the jar (META-INF/build-info.properties), where the running
+    // application finds it; GET /api/health reports it. The build time is left out: with
+    // it the file would differ on every build, and nothing could be reused.
+    buildInfo {
+        excludes.set(setOf("time"))
+    }
 }
 
 dependencies {
