@@ -34,6 +34,9 @@ class SecurityConfig {
         http
                 // The first matching rule wins, so the order below matters.
                 .authorizeHttpRequests(requests -> requests
+                        // Looking a flight up calls a third-party service and spends its quota,
+                        // so it is not a public read. This must come before the GET rule below.
+                        .requestMatchers(HttpMethod.GET, "/api/flights/lookup").hasRole(Role.ADMIN.name())
                         // Everyone may read. HEAD is a GET without the body.
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/**").permitAll()

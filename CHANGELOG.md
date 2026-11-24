@@ -9,6 +9,21 @@ Version numbers have three parts, `MAJOR.MINOR.PATCH`:
 - **MINOR** (0.2.1 to 0.3.0): something new, or a change to the database or the API.
 - **MAJOR** (1.0.0): reserved for the day the site is considered complete.
 
+## 0.3.0 (2026-11-24)
+
+### Added
+
+- **Looking a flight number up.** The flight form has a button next to the flight number.
+  It asks the backend which route the number flies and fills in the departure and arrival
+  airports, the airline and, when the provider knows it, the aircraft type. Several routes
+  for one number are offered as a choice; what was typed by hand is never replaced.
+  Without configuration the free ADSBDB answers with the route and the airline. Setting
+  `AERODATABOX_API_KEY` switches to AeroDataBox, which also knows the aircraft and the
+  date. The button is shown to administrators only, because a lookup spends the provider's
+  quota.
+- **`GET /api/flights/lookup`.** The endpoint behind the button: `flightNo` is required,
+  `date`, `from` and `to` are optional.
+
 ## 0.2.0 (2026-11-23)
 
 Fixes and improvements after a review of the live site by a visitor who was not signed in.

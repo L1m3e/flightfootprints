@@ -44,6 +44,19 @@ export interface Flight {
   notes: string | null
 }
 
+/** A route the flight lookup found, with both airports included. */
+export interface FlightLookup {
+  flightNo: string
+  from: Airport
+  to: Airport
+  /** ICAO aircraft type, e.g. B77W. Providers that only know the route return null. */
+  aircraftIcao: string | null
+  /** The aircraft model as the provider names it, e.g. Boeing 777-300ER. */
+  aircraftModel: string | null
+  /** Null when the provider named no airline or it is not in the list of known ones. */
+  airline: FlightAirline | null
+}
+
 /** What the API accepts when creating or changing a flight. */
 export interface FlightInput {
   flightDate: string
