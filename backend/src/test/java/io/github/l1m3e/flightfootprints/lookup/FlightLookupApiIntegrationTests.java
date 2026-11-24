@@ -54,14 +54,16 @@ class FlightLookupApiIntegrationTests extends IntegrationTest {
                 .hasStatusOk()
                 .hasContentTypeCompatibleWith(MediaType.APPLICATION_JSON)
                 .bodyJson().isLenientlyEqualTo("""
-                        {
-                          "flightNo": "MU587",
-                          "from": {"iata": "PVG", "city": "Shanghai (Pudong)", "country": "CN"},
-                          "to": {"iata": "JFK", "city": "New York", "country": "US"},
-                          "aircraftIcao": "B77W",
-                          "aircraftModel": "Boeing 777-300ER",
-                          "airline": {"iata": "MU", "name": "China Eastern Airlines", "nameZh": "中国东方航空"}
-                        }
+                        [
+                          {
+                            "flightNo": "MU587",
+                            "from": {"iata": "PVG", "city": "Shanghai (Pudong)", "country": "CN"},
+                            "to": {"iata": "JFK", "city": "New York", "country": "US"},
+                            "aircraftIcao": "B77W",
+                            "aircraftModel": "Boeing 777-300ER",
+                            "airline": {"iata": "MU", "name": "China Eastern Airlines", "nameZh": "中国东方航空"}
+                          }
+                        ]
                         """);
         verify(provider).lookup("MU587", DATE);
     }
