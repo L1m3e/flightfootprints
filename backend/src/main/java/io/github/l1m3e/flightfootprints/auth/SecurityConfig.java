@@ -34,15 +34,21 @@ class SecurityConfig {
         http
                 // The first matching rule wins, so the order below matters.
                 .authorizeHttpRequests(requests -> requests
-                        // Everyone may read.
+                        // Everyone may read. HEAD is a GET without the body.
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-                        // A visitor has to be able to register and to sign in.
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                        // Changing flights is for the administrator only. Being signed in is not
-                        // enough, otherwise every registered account could edit the log.
-                        .requestMatchers("/api/flights/**").hasRole(Role.ADMIN.name())
-                        // Anything else under /api that is not a GET needs a signed-in user.
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers(HttpMethod.HEAD, "/api/**").permitAll()
+                        // A visitor has to be able to register and to sign in. Whether
+                        // registration is open at all is decided by RegistrationGate.
+                        .requestMatchers(HttpMethod.POST, RegistrationGate.REGISTRATION_PATH, "/api/auth/login")
+                        .permitAll()
+                        // Everything else under /api changes something, and changing things is
+                        // for administrators only. Being signed in is not enough, otherwise
+                        // every registered account could edit the log. The rule covers the
+                        // whole of /api and not only /api/flights, so an endpoint that is added
+                        // later is closed until a rule above opens it.
+                        // (Signing out is not affected: Spring Security handles
+                        // POST /api/auth/logout before these rules are consulted.)
+                        .requestMatchers("/api/**").hasRole(Role.ADMIN.name())
                         // Everything outside /api is the single-page app itself.
                         .anyRequest().permitAll())
 

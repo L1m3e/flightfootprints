@@ -5,6 +5,8 @@ import static io.github.l1m3e.flightfootprints.TestRequests.csrfToken;
 
 import io.github.l1m3e.flightfootprints.TestcontainersConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -47,6 +49,41 @@ class ClosedSiteIntegrationTests {
                 .bodyJson().extractingPath("$.detail").isEqualTo("Registration is closed");
 
         assertThat(jdbc.sql("SELECT count(*) FROM users").query(Long.class).single()).isZero();
+    }
+
+    /**
+     * The answer does not depend on what was sent. Before, a body that failed validation
+     * got "400, the username must not be empty", which told a visitor how to fill in a
+     * form that is not open.
+     */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            an empty object       | application/json | {}
+            invalid values        | application/json | {"username": "a!", "password": "short"}
+            a missing password    | application/json | {"username": "Amelia"}
+            unknown fields        | application/json | {"role": "ADMIN"}
+            JSON that is cut off  | application/json | {"username":
+            something else        | text/plain       | let me in
+            """)
+    void registrationIsRefusedWhateverTheRequestContains(String description, String contentType, String body) {
+        assertThat(mvc.post().uri("/api/auth/register")
+                .with(csrfToken())
+                .contentType(contentType)
+                .content(body))
+                .hasStatus(HttpStatus.FORBIDDEN)
+                .hasContentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)
+                .bodyJson().isLenientlyEqualTo("""
+                        {"status": 403, "detail": "Registration is closed"}
+                        """)
+                // Nothing about fields: the request was not looked at.
+                .doesNotHavePath("$.errors");
+    }
+
+    @Test
+    void registrationIsRefusedWithoutAnyBody() {
+        assertThat(mvc.post().uri("/api/auth/register").with(csrfToken()))
+                .hasStatus(HttpStatus.FORBIDDEN)
+                .bodyJson().extractingPath("$.detail").isEqualTo("Registration is closed");
     }
 
     @Test

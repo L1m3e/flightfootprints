@@ -27,8 +27,9 @@ public class RegistrationService {
 
     /** Creates a regular account. Registration can never produce an administrator. */
     public UserAccount register(String username, String rawPassword) {
+        // RegistrationGate already refuses the HTTP request. This is for any other caller.
         if (!properties.registrationEnabled()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Registration is closed");
+            throw RegistrationGate.registrationClosed();
         }
         if (rawPassword.getBytes(StandardCharsets.UTF_8).length > MAX_PASSWORD_BYTES) {
             throw new FieldValidationException("password", "TooLong", "Password is too long");
