@@ -20,7 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 /**
  * AeroDataBox's "flight by number and date" endpoint. Unlike ADSBDB it knows the aircraft
  * type, but it needs an API key, spends quota, and only answers for dates within a year of
- * today.
+ * today. Where it has no answer, ADSBDB is asked instead; that is not decided here but in
+ * {@link FallbackFlightLookupProvider}.
  *
  * <p>Wire format: {@code GET /flights/number/{number}/{yyyy-MM-dd}?dateLocalRole=Both}
  * answers 200 with an array of flights, 204 when there is no such flight, or 404. When a

@@ -22,13 +22,14 @@ class FlightLookupConfigTest {
                 .isInstanceOf(AdsbdbFlightLookupProvider.class);
     }
 
+    /** Not AeroDataBox alone: the free provider stays behind it for what it cannot answer. */
     @Test
-    void aKeySwitchesToTheProviderThatKnowsAircraft() {
+    void aKeyPutsTheProviderThatKnowsAircraftInFrontOfTheFreeOne() {
         FlightLookupProperties properties = new FlightLookupProperties(Duration.ofSeconds(1),
                 new FlightLookupProperties.Adsbdb(null),
                 new FlightLookupProperties.AeroDataBox(null, "secret", null));
 
         assertThat(config.flightLookupProvider(properties, RestClient.builder(), clock))
-                .isInstanceOf(AeroDataBoxFlightLookupProvider.class);
+                .isInstanceOf(FallbackFlightLookupProvider.class);
     }
 }

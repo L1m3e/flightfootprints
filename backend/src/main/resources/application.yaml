@@ -51,9 +51,9 @@ app:
       # and airlines, not aircraft types, and it accepts any date.
       base-url: ${ADSBDB_BASE_URL:https://api.adsbdb.com}
     aerodatabox:
-      # A key switches the lookup to AeroDataBox, which also knows aircraft
-      # types but only answers for dates within a year of today and spends
-      # the key's quota.
+      # With a key, AeroDataBox is asked first: it also knows aircraft types,
+      # but only for dates within a year of today, and it spends the key's
+      # quota. Whenever it has no answer, ADSBDB is asked instead.
       api-key: ${AERODATABOX_API_KEY:}
       base-url: ${AERODATABOX_BASE_URL:https://aerodatabox.p.rapidapi.com}
       # x-rapidapi-key for RapidAPI, X-Api-Key for a direct subscription.

@@ -10,9 +10,10 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 /**
- * Chooses the provider once, at startup, so no request has to decide. AeroDataBox wins
- * when a key is configured because it also knows aircraft types; ADSBDB is the free
- * fallback and needs no account.
+ * Chooses the provider once, at startup, so no request has to decide. Without an
+ * AeroDataBox key that is ADSBDB, which is free and needs no account. With a key,
+ * AeroDataBox is asked first because it also knows aircraft types, and ADSBDB stands in
+ * whenever AeroDataBox has no answer; see {@link FallbackFlightLookupProvider}.
  */
 @Configuration(proxyBeanMethods = false)
 class FlightLookupConfig {
@@ -20,14 +21,18 @@ class FlightLookupConfig {
     @Bean
     FlightLookupProvider flightLookupProvider(FlightLookupProperties properties, RestClient.Builder builder,
             Clock clock) {
-        FlightLookupProperties.AeroDataBox aeroDataBox = properties.aerodatabox();
-        if (aeroDataBox.configured()) {
-            return new AeroDataBoxFlightLookupProvider(
-                    client(builder, aeroDataBox.baseUrl(), properties.timeout()),
-                    aeroDataBox.apiKey(), aeroDataBox.apiKeyHeader(), clock);
-        }
-        return new AdsbdbFlightLookupProvider(
+        FlightLookupProvider adsbdb = new AdsbdbFlightLookupProvider(
                 client(builder, properties.adsbdb().baseUrl(), properties.timeout()));
+
+        FlightLookupProperties.AeroDataBox aeroDataBox = properties.aerodatabox();
+        if (!aeroDataBox.configured()) {
+            return adsbdb;
+        }
+        return new FallbackFlightLookupProvider(
+                new AeroDataBoxFlightLookupProvider(
+                        client(builder, aeroDataBox.baseUrl(), properties.timeout()),
+                        aeroDataBox.apiKey(), aeroDataBox.apiKeyHeader(), clock),
+                adsbdb);
     }
 
     /** A RestClient that gives up instead of holding the browser's request open forever. */

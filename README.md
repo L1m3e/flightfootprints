@@ -95,7 +95,7 @@ git ignores it.
 | `ADMIN_PASSWORD`        | The administrator's password, at least 12 characters. Only a hash of it is stored.    |
 | `ADDITIONAL_ADMINS`     | More administrators: `name:password` pairs separated by commas. Optional.             |
 | `REGISTRATION_ENABLED`  | `false` stops visitors from creating accounts. Defaults to `true`.                    |
-| `AERODATABOX_API_KEY`   | A key enables the AeroDataBox lookup, which also reports aircraft types. Optional.    |
+| `AERODATABOX_API_KEY`   | Optional key for AeroDataBox, asked before ADSBDB; it also knows aircraft types.      |
 | `FLIGHT_LOOKUP_TIMEOUT` | How long a flight lookup may wait for its provider. Defaults to `8s`.                 |
 
 The backend makes its accounts agree with these settings on every start. Changing a
@@ -106,9 +106,11 @@ administrator configured the site is read-only.
 The flight form can look a flight number up and fill in the route and the aircraft. That
 lookup is done by the backend, never by the browser. Without `AERODATABOX_API_KEY` it uses
 [ADSBDB](https://adsbdb.com/), which is free and needs no account: it knows the route and
-the airline, but not the aircraft type, and it ignores the date. A key switches to
-[AeroDataBox](https://aerodatabox.com/), which also knows the aircraft and the date, and
-has a free quota. A direct subscription needs
+the airline, but not the aircraft type, and it ignores the date. With a key,
+[AeroDataBox](https://aerodatabox.com/) is asked first. It also knows the aircraft and the
+date, but only dates within a year of today, and its free plan has a small quota; whenever
+it has no answer, ADSBDB is asked instead, so an old flight still gets its route. The key
+of a RapidAPI subscription works as it is. A direct subscription needs
 `AERODATABOX_BASE_URL=https://api.aerodatabox.com` and
 `AERODATABOX_API_KEY_HEADER=X-Api-Key` as well. The lookup is available to administrators
 only, so a public page cannot spend the quota.
@@ -206,8 +208,8 @@ great-circle distance between the two airports with the haversine formula.
 the route. `date`, `from` and `to` are optional; `from` and `to` only choose between
 several routes for the same number. The answer is a list, because a number can stand for
 more than one route, and each entry contains the airports and the airline as the other
-endpoints return them. A number the provider does not know is `404`, an upstream failure
-is `502`, and a malformed number is `400`.
+endpoints return them. A number that no provider knows is `404`, a failure of the
+providers is `502`, and a malformed number is `400`.
 
 The contributors page lists the people who helped build the site. A contributor has a
 name and, optionally, a link and a line about what they did. The link is shown as a link,
@@ -259,7 +261,7 @@ arrived. [CHANGELOG.md](CHANGELOG.md) lists what each version changed and explai
 which part of the number goes up.
 
 To release a version: change the number in `VERSION`, describe the changes at the top of
-`CHANGELOG.md`, commit both, and tag the commit (`git tag v0.3.0`).
+`CHANGELOG.md`, commit both, and tag the commit (`git tag v0.3.1`).
 
 ## Roadmap
 

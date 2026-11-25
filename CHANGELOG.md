@@ -9,6 +9,18 @@ Version numbers have three parts, `MAJOR.MINOR.PATCH`:
 - **MINOR** (0.2.1 to 0.3.0): something new, or a change to the database or the API.
 - **MAJOR** (1.0.0): reserved for the day the site is considered complete.
 
+## 0.3.1 (2026-11-25)
+
+### Fixed
+
+- **Looking up older flights with an AeroDataBox key.** With a key set, every lookup went
+  to AeroDataBox, which only knows dates within a year of today and not every flight, so
+  a flight from two years ago could not be looked up at all, although the free ADSBDB
+  knows its route. AeroDataBox is still asked first, because it also knows the aircraft;
+  when it does not know the flight, cannot be asked about the date, or fails (an outage,
+  a rejected key, a used-up quota), ADSBDB is asked instead. Only the aircraft is then
+  left for you to fill in.
+
 ## 0.3.0 (2026-11-25)
 
 ### Added
