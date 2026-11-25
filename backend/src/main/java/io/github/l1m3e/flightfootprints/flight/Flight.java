@@ -34,5 +34,5 @@ public record Flight(
      * Airline designator (two or three letters or digits) followed by up to four digits and
      * an optional letter: MU587, CA818, 9C8887.
      */
-    public static final String FLIGHT_NO_PATTERN = "^[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?$";
+    public static final String FLIGHT_NO_PATTERN = FlightNumber.PATTERN;
 }

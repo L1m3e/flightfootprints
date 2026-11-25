@@ -19,4 +19,7 @@ Thumbs.db
 # Logs
 *.log
 
+# Agent harness task output
+.pi/
+
 # backend/ and frontend/ keep their own .gitignore for build output and dependencies

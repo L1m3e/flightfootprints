@@ -89,17 +89,29 @@ Settings come from environment variables. For local development, copy `.env.exam
 `.env` in the repository root and fill it in; the backend reads that file by itself, and
 git ignores it.
 
-| Variable               | Meaning                                                                               |
-| ---------------------- | ------------------------------------------------------------------------------------- |
-| `ADMIN_USERNAME`       | Username of the site's administrator.                                                 |
-| `ADMIN_PASSWORD`       | The administrator's password, at least 12 characters. Only a hash of it is stored.    |
-| `ADDITIONAL_ADMINS`    | More administrators: `name:password` pairs separated by commas. Optional.             |
-| `REGISTRATION_ENABLED` | `false` stops visitors from creating accounts. Defaults to `true`.                    |
+| Variable                | Meaning                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `ADMIN_USERNAME`        | Username of the site's administrator.                                                 |
+| `ADMIN_PASSWORD`        | The administrator's password, at least 12 characters. Only a hash of it is stored.    |
+| `ADDITIONAL_ADMINS`     | More administrators: `name:password` pairs separated by commas. Optional.             |
+| `REGISTRATION_ENABLED`  | `false` stops visitors from creating accounts. Defaults to `true`.                    |
+| `AERODATABOX_API_KEY`   | A key enables the AeroDataBox lookup, which also reports aircraft types. Optional.    |
+| `FLIGHT_LOOKUP_TIMEOUT` | How long a flight lookup may wait for its provider. Defaults to `8s`.                 |
 
 The backend makes its accounts agree with these settings on every start. Changing a
 password and restarting is how it is rotated, and an administrator who is removed from the
 settings keeps the account but loses the right to change flights. Without any
 administrator configured the site is read-only.
+
+The flight form can look a flight number up and fill in the route and the aircraft. That
+lookup is done by the backend, never by the browser. Without `AERODATABOX_API_KEY` it uses
+[ADSBDB](https://adsbdb.com/), which is free and needs no account: it knows the route and
+the airline, but not the aircraft type, and it ignores the date. A key switches to
+[AeroDataBox](https://aerodatabox.com/), which also knows the aircraft and the date, and
+has a free quota. A direct subscription needs
+`AERODATABOX_BASE_URL=https://api.aerodatabox.com` and
+`AERODATABOX_API_KEY_HEADER=X-Api-Key` as well. The lookup is available to administrators
+only, so a public page cannot spend the quota.
 
 The frontend has one optional build-time setting: `VITE_MAP_STYLE_URL`, the address of a
 MapLibre style to use as the basemap instead of OpenFreeMap's. Put it in
@@ -160,18 +172,19 @@ in the list of known ones is counted by its name, without regard to upper and lo
 
 Every error is returned as an RFC 9457 problem document (`application/problem+json`).
 
-| Method              | Path                 | Who             | Purpose                                      |
-| ------------------- | -------------------- | --------------- | -------------------------------------------- |
-| `GET`               | `/api/health`        | everyone        | Status, version and number of airports       |
-| `GET`               | `/api/flights`       | everyone        | All flights, newest first                    |
-| `GET`               | `/api/flights/{id}`  | everyone        | One flight                                   |
-| `POST`              | `/api/flights`       | administrator   | Add a flight                                 |
-| `PUT`, `DELETE`     | `/api/flights/{id}`  | administrator   | Change or delete a flight                    |
-| `GET`               | `/api/stats`         | everyone        | Totals, rankings and flights per year        |
-| `GET`               | `/api/airports?q=`   | everyone        | Search airports by code, city or name        |
-| `GET`               | `/api/airlines`      | everyone        | The airlines the site knows, with both names |
-| `GET`               | `/api/auth/me`       | everyone        | Who is signed in                             |
-| `POST`              | `/api/auth/register` | visitors        | Create a regular account                     |
+| Method              | Path                  | Who             | Purpose                                      |
+| ------------------- | --------------------- | --------------- | -------------------------------------------- |
+| `GET`               | `/api/health`         | everyone        | Status, version and number of airports       |
+| `GET`               | `/api/flights`        | everyone        | All flights, newest first                    |
+| `GET`               | `/api/flights/{id}`   | everyone        | One flight                                   |
+| `GET`               | `/api/flights/lookup` | administrator   | Find a flight by number and date             |
+| `POST`              | `/api/flights`        | administrator   | Add a flight                                 |
+| `PUT`, `DELETE`     | `/api/flights/{id}`   | administrator   | Change or delete a flight                    |
+| `GET`               | `/api/stats`          | everyone        | Totals, rankings and flights per year        |
+| `GET`               | `/api/airports?q=`    | everyone        | Search airports by code, city or name        |
+| `GET`               | `/api/airlines`       | everyone        | The airlines the site knows, with both names |
+| `GET`               | `/api/auth/me`        | everyone        | Who is signed in                             |
+| `POST`              | `/api/auth/register`  | visitors        | Create a regular account                     |
 | `POST`              | `/api/auth/login`    | visitors        | Sign in (form fields `username`, `password`) |
 | `POST`              | `/api/auth/logout`   | signed-in users | Sign out                                     |
 
@@ -185,6 +198,13 @@ form fills in the airline from it.
 
 The distance of a flight is never sent by the client: the backend computes the
 great-circle distance between the two airports with the haversine formula.
+
+`GET /api/flights/lookup?flightNo=MU587&date=2026-11-20` asks the configured provider for
+the route. `date`, `from` and `to` are optional; `from` and `to` only choose between
+several routes for the same number. The answer is a list, because a number can stand for
+more than one route, and each entry contains the airports and the airline as the other
+endpoints return them. A number the provider does not know is `404`, an upstream failure
+is `502`, and a malformed number is `400`.
 
 ## Checks
 
@@ -232,12 +252,13 @@ arrived. [CHANGELOG.md](CHANGELOG.md) lists what each version changed and explai
 which part of the number goes up.
 
 To release a version: change the number in `VERSION`, describe the changes at the top of
-`CHANGELOG.md`, commit both, and tag the commit (`git tag v0.2.0`).
+`CHANGELOG.md`, commit both, and tag the commit (`git tag v0.3.0`).
 
 ## Roadmap
 
 - [x] Project skeleton: monorepo, Flyway migrations, airport import, health check
 - [x] Accounts, admin login, and creating, editing and deleting flights
+- [x] Flight number lookup that fills in the route, the airline and the aircraft
 - [x] World map with great-circle routes
 - [x] Statistics page and timeline
 - [ ] Aircraft side views with airline liveries (postponed; a first attempt is on the `aircraft-drawings` branch)

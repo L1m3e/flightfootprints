@@ -42,3 +42,19 @@ app:
     additional-admins: ${ADDITIONAL_ADMINS:}
     # Set REGISTRATION_ENABLED=false to stop visitors from creating accounts.
     registration-enabled: ${REGISTRATION_ENABLED:true}
+
+  flight-lookup:
+    # How long to wait for the lookup service before answering 502.
+    timeout: ${FLIGHT_LOOKUP_TIMEOUT:8s}
+    adsbdb:
+      # The free service used when no AeroDataBox key is set. It knows routes
+      # and airlines, not aircraft types, and it accepts any date.
+      base-url: ${ADSBDB_BASE_URL:https://api.adsbdb.com}
+    aerodatabox:
+      # A key switches the lookup to AeroDataBox, which also knows aircraft
+      # types but only answers for dates within a year of today and spends
+      # the key's quota.
+      api-key: ${AERODATABOX_API_KEY:}
+      base-url: ${AERODATABOX_BASE_URL:https://aerodatabox.p.rapidapi.com}
+      # x-rapidapi-key for RapidAPI, X-Api-Key for a direct subscription.
+      api-key-header: ${AERODATABOX_API_KEY_HEADER:x-rapidapi-key}

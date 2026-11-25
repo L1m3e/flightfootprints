@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useQuery } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
+import { LoaderCircle, Search } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -10,25 +11,21 @@ import { z } from "zod"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Textarea } from "@/components/ui/textarea"
 import { AIRCRAFT_TYPES } from "@/features/aircraft/aircraftTypes"
 import { airlineDesignator, airlineName, airlineOfFlightNo, findAirline } from "@/features/flights/airlines"
 import { AirportCombobox } from "@/features/flights/AirportCombobox"
 import { airlinesQuery, CABINS, type Airline, type Airport, type Flight, type FlightInput } from "@/features/flights/api"
+import { FLIGHT_NO_PATTERN, normalizeFlightNo } from "@/features/flights/flightNumber"
+import { useFlightLookup } from "@/features/flights/useFlightLookup"
 import { ApiError, type FieldProblem } from "@/lib/api"
 import { isoDateFromToday } from "@/lib/format"
 import { useErrorMessage } from "@/lib/useErrorMessage"
 
 // One empty list for "not loaded yet", so that it is the same value on every render.
 const NO_AIRLINES: Airline[] = []
-
-// Same rule as the backend: airline designator, up to four digits, optional letter.
-const FLIGHT_NO_PATTERN = /^[A-Z0-9]{2,3}[0-9]{1,4}[A-Z]?$/
-
-function normalizeFlightNo(value: string): string {
-  return value.replaceAll(" ", "").toUpperCase()
-}
 
 /** The checks here mirror the backend's, which stays the authority. These give instant feedback. */
 function createSchema(t: TFunction, latestDate: string) {
@@ -126,6 +123,8 @@ function translateProblem(problem: FieldProblem, t: TFunction): string {
       return t("validation.sameAirport")
     case "InFuture":
       return t("validation.futureDate")
+    case "OutOfRange":
+      return t("validation.lookupDateRange")
     case "NotNull":
     case "NotBlank":
       return t("validation.required")
@@ -168,6 +167,9 @@ export function FlightForm({
   // purpose (a flight operated by another airline) and must stay.
   const { data: airlines = NO_AIRLINES } = useQuery(airlinesQuery)
   const flightNo = useWatch({ control: form.control, name: "flightNo" })
+  const flightDate = useWatch({ control: form.control, name: "flightDate" })
+  const fromAirport = useWatch({ control: form.control, name: "from" })
+  const toAirport = useWatch({ control: form.control, name: "to" })
   const filledIn = useRef<string | null>(
     flight?.airline.iata != null && flight.airline.iata === airlineDesignator(flight.flightNo)
       ? initialValues.airline
@@ -198,6 +200,41 @@ export function FlightForm({
   } else if (typedAirline.trim() !== "" && airlines.length > 0) {
     airlineHint = t("flights.airlineUnknown")
   }
+
+  // Looking a flight up fills in the route and the aircraft, which would otherwise be
+  // typed by hand. The hook asks the backend; the form decides what to do with the
+  // answer, and never replaces a value the user typed.
+  const filledAircraft = useRef<string | null>(null)
+  const lookup = useFlightLookup({
+    flightNo,
+    flightDate,
+    from: fromAirport?.iata,
+    to: toAirport?.iata,
+    language: i18n.language,
+    t,
+    onFill: (fill) => {
+      form.setValue("from", fill.from, { shouldDirty: true, shouldValidate: true })
+      form.setValue("to", fill.to, { shouldDirty: true, shouldValidate: true })
+
+      if (fill.aircraft) {
+        const current = form.getValues("aircraft")
+        if (current.trim() === "" || current === filledAircraft.current) {
+          filledAircraft.current = fill.aircraft
+          form.setValue("aircraft", fill.aircraft, { shouldDirty: true, shouldValidate: true })
+        }
+      }
+
+      if (fill.airline) {
+        const current = form.getValues("airline")
+        if (current.trim() === "" || current === filledIn.current) {
+          filledIn.current = fill.airline
+          form.setValue("airline", fill.airline, { shouldDirty: true, shouldValidate: true })
+        }
+      }
+    },
+    onInvalidFlightNo: () => form.setError("flightNo", { message: t("validation.flightNoFormat") }),
+    describeProblem: (problem) => translateProblem(problem, t),
+  })
 
   async function submit(values: ValidValues) {
     try {
@@ -241,16 +278,64 @@ export function FlightForm({
             <FieldLabel htmlFor="flightNo">
               {t("flights.flightNo")} {optional}
             </FieldLabel>
-            <Input
-              id="flightNo"
-              placeholder="MU587"
-              autoCapitalize="characters"
-              spellCheck={false}
-              className="font-mono uppercase placeholder:normal-case"
-              aria-invalid={!!errors.flightNo}
-              {...form.register("flightNo")}
-            />
+            <InputGroup>
+              <InputGroupInput
+                id="flightNo"
+                placeholder="MU587"
+                autoCapitalize="characters"
+                spellCheck={false}
+                className="font-mono uppercase placeholder:normal-case"
+                aria-invalid={!!errors.flightNo}
+                {...form.register("flightNo")}
+              />
+              {/* Asks the lookup service which route the number flies. The result fills in
+                  the airports and the aircraft; the form never saves anything by itself. */}
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  type="button"
+                  size="icon-xs"
+                  onClick={() => void lookup.lookUp()}
+                  disabled={lookup.lookingUp || normalizeFlightNo(flightNo) === ""}
+                  aria-label={t("flights.lookup")}
+                  title={t("flights.lookup")}
+                >
+                  {lookup.lookingUp ? <LoaderCircle className="animate-spin" /> : <Search />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+            <FieldDescription>{t("flights.flightNoHint")}</FieldDescription>
             <FieldError errors={[errors.flightNo]} />
+            {lookup.message && (
+              <p
+                className={`text-sm ${lookup.message.kind === "error" ? "text-destructive" : "text-muted-foreground"}`}
+                role={lookup.message.kind === "error" ? "alert" : "status"}
+              >
+                {lookup.message.text}
+              </p>
+            )}
+            {lookup.choices.length > 1 && (
+              <div className="flex flex-col gap-2">
+                <FieldDescription>{t("flights.lookupChoose")}</FieldDescription>
+                <div className="flex flex-wrap gap-2">
+                  {lookup.choices.map((route) => (
+                    <Button
+                      key={`${route.from.iata}-${route.to.iata}-${route.aircraftIcao ?? ""}-${route.aircraftModel ?? ""}`}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => lookup.choose(route)}
+                    >
+                      <span className="font-mono">
+                        {route.from.iata} → {route.to.iata}
+                      </span>
+                      {(route.aircraftModel ?? route.aircraftIcao) && (
+                        <span className="text-muted-foreground">{route.aircraftModel ?? route.aircraftIcao}</span>
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </Field>
         </div>
 

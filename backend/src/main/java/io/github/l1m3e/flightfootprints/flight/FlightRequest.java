@@ -32,7 +32,7 @@ public record FlightRequest(
      * fields become null, and codes are upper-cased, so " mu 587 " is accepted as "MU587".
      */
     public FlightRequest {
-        flightNo = upperCase(trimToNull(flightNo == null ? null : flightNo.replace(" ", "")));
+        flightNo = trimToNull(FlightNumber.normalize(flightNo));
         airline = trimToNull(airline);
         fromIata = upperCase(trimToNull(fromIata));
         toIata = upperCase(trimToNull(toIata));
