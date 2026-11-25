@@ -41,6 +41,23 @@ class FlightLookupApiIntegrationTests extends IntegrationTest {
                 .hasStatus(HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * HEAD is answered by the same code as GET, without the body. Everyone may send HEAD to
+     * the public endpoints, so the lookup needs its rule for every method, not only for GET.
+     */
+    @Test
+    void aHeadRequestIsNoWayAroundTheRule() {
+        register("Amelia", USER_PASSWORD);
+
+        assertThat(mvc.head().uri("/api/flights/lookup").param("flightNo", "MU587"))
+                .hasStatus(HttpStatus.UNAUTHORIZED);
+        assertThat(mvc.head().uri("/api/flights/lookup").param("flightNo", "MU587")
+                .session(signIn("Amelia", USER_PASSWORD)))
+                .hasStatus(HttpStatus.FORBIDDEN);
+
+        verifyNoInteractions(provider);
+    }
+
     @Test
     void theAdministratorGetsTheResolvedRouteAndAircraft() {
         when(provider.lookup("MU587", DATE)).thenReturn(List.of(

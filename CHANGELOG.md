@@ -16,7 +16,8 @@ Version numbers have three parts, `MAJOR.MINOR.PATCH`:
 - **Looking a flight number up.** The flight form has a button next to the flight number.
   It asks the backend which route the number flies and fills in the departure and arrival
   airports, the airline and, when the provider knows it, the aircraft type. Several routes
-  for one number are offered as a choice; what was typed by hand is never replaced.
+  for one number are offered as a choice. The airports are set to the route that was
+  found; an airline or an aircraft that was typed by hand is never replaced.
   Without configuration the free ADSBDB answers with the route and the airline. Setting
   `AERODATABOX_API_KEY` switches to AeroDataBox, which also knows the aircraft and the
   date. The button is shown to administrators only, because a lookup spends the provider's

@@ -44,6 +44,12 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADDITIONAL_ADMINS: ${ADDITIONAL_ADMINS:-}
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      # The flight lookup. Left empty, the application uses its own defaults: the free
+      # ADSBDB, and a wait of eight seconds at most.
+      AERODATABOX_API_KEY: ${AERODATABOX_API_KEY:-}
+      AERODATABOX_BASE_URL: ${AERODATABOX_BASE_URL:-}
+      AERODATABOX_API_KEY_HEADER: ${AERODATABOX_API_KEY_HEADER:-}
+      FLIGHT_LOOKUP_TIMEOUT: ${FLIGHT_LOOKUP_TIMEOUT:-8s}
       # A ceiling for Java's memory, so that the database keeps its share on a small server.
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xmx320m}
     # Its health check is part of the image.
