@@ -9,7 +9,7 @@ Version numbers have three parts, `MAJOR.MINOR.PATCH`:
 - **MINOR** (0.2.1 to 0.3.0): something new, or a change to the database or the API.
 - **MAJOR** (1.0.0): reserved for the day the site is considered complete.
 
-## 0.3.0 (2026-11-24)
+## 0.3.0 (2026-11-25)
 
 ### Added
 
@@ -24,6 +24,20 @@ Version numbers have three parts, `MAJOR.MINOR.PATCH`:
   quota.
 - **`GET /api/flights/lookup`.** The endpoint behind the button: `flightNo` is required,
   `date`, `from` and `to` are optional.
+- **A page of contributors**, reached from the foot of every page: the people who helped
+  build the site, each with a name and, if wanted, a link and a line about what they did.
+  An administrator adds, changes and removes entries on the page itself; everyone else
+  reads. A link has to be a web address, and one typed without `https://` gets it added.
+- API: `GET /api/contributors` for everyone; `POST /api/contributors` and `PUT` and
+  `DELETE /api/contributors/{id}` for administrators.
+- Database: migration V7 (`contributors`).
+
+### Fixed
+
+- A visitor who was not signed in could reach the flight lookup with a `HEAD` request and
+  make the server call the lookup provider. Found and closed before the lookup was
+  released: the rule now covers every method.
+- The production Compose file passes the lookup settings on to the application.
 
 ## 0.2.0 (2026-11-23)
 

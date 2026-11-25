@@ -1,5 +1,6 @@
 import { cn } from "cn"
 import { Trans, useTranslation } from "react-i18next"
+import { Link } from "react-router"
 
 import { ExternalLink } from "@/components/ExternalLink"
 
@@ -16,7 +17,12 @@ export function SiteFooter({ wide = false }: { wide?: boolean }) {
           wide ? "max-w-7xl" : "max-w-5xl",
         )}
       >
-        <p>{t("footer.tagline")}</p>
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span>{t("footer.tagline")}</span>
+          <Link to="/contributors" className="underline underline-offset-2 hover:text-foreground">
+            {t("footer.contributors")}
+          </Link>
+        </p>
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span>
             {/* <Trans> puts the text between <source> and </source> inside the link. */}

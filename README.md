@@ -172,21 +172,24 @@ in the list of known ones is counted by its name, without regard to upper and lo
 
 Every error is returned as an RFC 9457 problem document (`application/problem+json`).
 
-| Method              | Path                  | Who             | Purpose                                      |
-| ------------------- | --------------------- | --------------- | -------------------------------------------- |
-| `GET`               | `/api/health`         | everyone        | Status, version and number of airports       |
-| `GET`               | `/api/flights`        | everyone        | All flights, newest first                    |
-| `GET`               | `/api/flights/{id}`   | everyone        | One flight                                   |
-| `GET`               | `/api/flights/lookup` | administrator   | Find a flight by number and date             |
-| `POST`              | `/api/flights`        | administrator   | Add a flight                                 |
-| `PUT`, `DELETE`     | `/api/flights/{id}`   | administrator   | Change or delete a flight                    |
-| `GET`               | `/api/stats`          | everyone        | Totals, rankings and flights per year        |
-| `GET`               | `/api/airports?q=`    | everyone        | Search airports by code, city or name        |
-| `GET`               | `/api/airlines`       | everyone        | The airlines the site knows, with both names |
-| `GET`               | `/api/auth/me`        | everyone        | Who is signed in                             |
-| `POST`              | `/api/auth/register`  | visitors        | Create a regular account                     |
-| `POST`              | `/api/auth/login`    | visitors        | Sign in (form fields `username`, `password`) |
-| `POST`              | `/api/auth/logout`   | signed-in users | Sign out                                     |
+| Method          | Path                     | Who             | Purpose                                      |
+| --------------- | ------------------------ | --------------- | -------------------------------------------- |
+| `GET`           | `/api/health`            | everyone        | Status, version and number of airports       |
+| `GET`           | `/api/flights`           | everyone        | All flights, newest first                    |
+| `GET`           | `/api/flights/{id}`      | everyone        | One flight                                   |
+| `GET`           | `/api/flights/lookup`    | administrator   | Find a flight by number and date             |
+| `POST`          | `/api/flights`           | administrator   | Add a flight                                 |
+| `PUT`, `DELETE` | `/api/flights/{id}`      | administrator   | Change or delete a flight                    |
+| `GET`           | `/api/stats`             | everyone        | Totals, rankings and flights per year        |
+| `GET`           | `/api/airports?q=`       | everyone        | Search airports by code, city or name        |
+| `GET`           | `/api/airlines`          | everyone        | The airlines the site knows, with both names |
+| `GET`           | `/api/contributors`      | everyone        | The people who helped build the site         |
+| `POST`          | `/api/contributors`      | administrator   | Add a contributor                            |
+| `PUT`, `DELETE` | `/api/contributors/{id}` | administrator   | Change or remove a contributor               |
+| `GET`           | `/api/auth/me`           | everyone        | Who is signed in                             |
+| `POST`          | `/api/auth/register`     | visitors        | Create a regular account                     |
+| `POST`          | `/api/auth/login`        | visitors        | Sign in (form fields `username`, `password`) |
+| `POST`          | `/api/auth/logout`       | signed-in users | Sign out                                     |
 
 A flight stores its airline as an IATA code together with the airline's name in English
 and in Chinese, and the page shows the name in the language it is set to. When a flight is
@@ -205,6 +208,10 @@ several routes for the same number. The answer is a list, because a number can s
 more than one route, and each entry contains the airports and the airline as the other
 endpoints return them. A number the provider does not know is `404`, an upstream failure
 is `502`, and a malformed number is `400`.
+
+The contributors page lists the people who helped build the site. A contributor has a
+name and, optionally, a link and a line about what they did. The link is shown as a link,
+so the backend and the database only accept web addresses (`http://` or `https://`).
 
 ## Checks
 
@@ -259,6 +266,7 @@ To release a version: change the number in `VERSION`, describe the changes at th
 - [x] Project skeleton: monorepo, Flyway migrations, airport import, health check
 - [x] Accounts, admin login, and creating, editing and deleting flights
 - [x] Flight number lookup that fills in the route, the airline and the aircraft
+- [x] Contributors page that an administrator edits on the site
 - [x] World map with great-circle routes
 - [x] Statistics page and timeline
 - [ ] Aircraft side views with airline liveries (postponed; a first attempt is on the `aircraft-drawings` branch)
